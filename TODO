@@ -5,7 +5,7 @@ Rules
     - Rook [DONE]
     - Bishop [DONE]
     - Queen [DONE]
-    - King
+    - King [DONE]
     - Pawn
     - Knight
 
@@ -38,3 +38,10 @@ Input/Output
 
 AI
 ==
+
+
+Cleanup
+=======
+
+- Unify attacks and _is_valid_move
+    - Handle the difference between pawn attacks and pawn moves

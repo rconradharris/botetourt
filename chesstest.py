@@ -1,5 +1,6 @@
 import unittest
 
+# Consts
 FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
 RANKS = [1, 2, 3, 4, 5, 6, 7, 8]
 WHITE = 'w'
@@ -58,29 +59,23 @@ class Piece(object):
         northerly = self._get_ranks_in_between_inclusive(RANKS[-1])
         southerly = self._get_ranks_in_between_inclusive(RANKS[0])
 
+        def _traverse_diag(file_dir, rank_dir):
+            for file, rank in zip(file_dir, rank_dir)[:self.RANGE+1]:
+                squares.add((file, rank))
+                if file != self.file and rank != self.rank and self.board[file][rank]:
+                    break
+
         # Going north east
-        for file, rank in zip(easterly, northerly):
-            squares.add((file, rank))
-            if file != self.file and rank != self.rank and self.board[file][rank]:
-                break
+        _traverse_diag(easterly, northerly)
 
         # Going north west
-        for file, rank in zip(westerly, northerly):
-            squares.add((file, rank))
-            if file != self.file and rank != self.rank and self.board[file][rank]:
-                break
+        _traverse_diag(westerly, northerly)
 
         # Going south east
-        for file, rank in zip(easterly, southerly):
-            squares.add((file, rank))
-            if file != self.file and rank != self.rank and self.board[file][rank]:
-                break
+        _traverse_diag(easterly, southerly)
 
         # Going south west
-        for file, rank in zip(westerly, southerly):
-            squares.add((file, rank))
-            if file != self.file and rank != self.rank and self.board[file][rank]:
-                break
+        _traverse_diag(westerly, southerly)
 
         return squares
 
@@ -88,17 +83,18 @@ class Piece(object):
         """Return all squares attacked along the rank by a piece."""
         squares = set()
 
+        def _traverse_files(end_file):
+            files = self._get_files_in_between_inclusive(end_file)[:self.RANGE+1]
+            for file in files:
+                squares.add((file, self.rank))
+                if file != self.file and self.board[file][self.rank]:
+                    break
+
         # Going east
-        for file in self._get_files_in_between_inclusive(FILES[-1]):
-            squares.add((file, self.rank))
-            if file != self.file and self.board[file][self.rank]:
-                break
+        _traverse_files(FILES[-1])
 
         # Going west
-        for file in self._get_files_in_between_inclusive(FILES[0]):
-            squares.add((file, self.rank))
-            if file != self.file and self.board[file][self.rank]:
-                break
+        _traverse_files(FILES[0])
 
         return squares
 
@@ -106,17 +102,18 @@ class Piece(object):
         """Return all squares attacked along the file by a piece."""
         squares = set()
 
+        def _traverse_ranks(end_rank):
+            ranks = self._get_ranks_in_between_inclusive(end_rank)[:self.RANGE+1]
+            for rank in ranks:
+                squares.add((self.file, rank))
+                if rank != self.rank and self.board[self.file][rank]:
+                    break
+
         # Going north
-        for rank in self._get_ranks_in_between_inclusive(RANKS[-1]):
-            squares.add((self.file, rank))
-            if rank != self.rank and self.board[self.file][rank]:
-                break
+        _traverse_ranks(RANKS[-1])
 
         # Going south
-        for rank in self._get_ranks_in_between_inclusive(RANKS[0]):
-            squares.add((self.file, rank))
-            if rank != self.rank and self.board[self.file][rank]:
-                break
+        _traverse_ranks(RANKS[0])
 
         return squares
 
@@ -145,7 +142,7 @@ class Piece(object):
 
         return False
 
-    def _is_valid_file_move(self, new_file, new_rank, piece_range=INFINITY,
+    def _is_valid_file_move(self, new_file, new_rank, piece_range=None,
                             direction_allowed=None):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
 
@@ -154,6 +151,8 @@ class Piece(object):
         elif direction_allowed == SOUTH and delta_rank > 0:
             return False
         else:
+            if piece_range is None:
+                piece_range = self.RANGE
             return (delta_file == 0 and
                     abs(delta_rank) <= piece_range and 
                     not self._is_file_blocked(new_rank))
@@ -180,7 +179,10 @@ class Piece(object):
 
         return False
 
-    def _is_valid_rank_move(self, new_file, new_rank, piece_range=INFINITY):
+    def _is_valid_rank_move(self, new_file, new_rank, piece_range=None):
+        if piece_range is None:
+            piece_range = self.RANGE
+
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
         return (delta_rank == 0 and
                 abs(delta_file) <= piece_range and
@@ -196,7 +198,7 @@ class Piece(object):
 
         return False
 
-    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=INFINITY,
+    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=None,
                                 direction_allowed=None):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
 
@@ -205,6 +207,8 @@ class Piece(object):
         elif direction_allowed == SOUTH and delta_rank > 0:
             return False
         else:
+            if piece_range is None:
+                piece_range = self.RANGE
             rank_squares = abs(delta_rank)
             file_squares = abs(delta_file)
             return (rank_squares == file_squares and
@@ -239,21 +243,21 @@ class Piece(object):
 
 class Pawn(Piece):
     SYMBOL = 'P'
+    RANGE = 1
 
     def _is_valid_move(self, new_file, new_rank):
-        # A pawn can push two squares forward on first move, otherwise it can
-        # only push one square
-        piece_range = 1 if self.moved else 2
-
         # White must march North, Black south
         direction_allowed = NORTH if self.color == WHITE else SOUTH
 
         piece_on_dest_square = self.board[new_file][new_rank]
         if piece_on_dest_square:
             return self._is_valid_diagonal_move(new_file, new_rank,
-                                                piece_range=piece_range,
                                                 direction_allowed=direction_allowed)
         else:
+            # A pawn can push two squares forward on first move, otherwise it can
+            # only push one square
+            piece_range = self.RANGE if self.moved else 2
+
             # A pawn is blocked by a piece in front of it
             return self._is_valid_file_move(new_file, new_rank,
                                             piece_range=piece_range,
@@ -262,6 +266,7 @@ class Pawn(Piece):
 
 class Knight(Piece):
     SYMBOL = 'K'
+    RANGE = None
 
     def _is_valid_move(self, new_file, new_rank):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
@@ -274,6 +279,7 @@ class Knight(Piece):
 
 class Bishop(Piece):
     SYMBOL = 'B'
+    RANGE = INFINITY
 
     def _is_valid_move(self, new_file, new_rank):
         return self._is_valid_diagonal_move(new_file, new_rank)
@@ -284,6 +290,7 @@ class Bishop(Piece):
 
 class Rook(Piece):
     SYMBOL = 'R'
+    RANGE = INFINITY
 
     def _is_valid_move(self, new_file, new_rank):
         # A rook must move along a single rank or file
@@ -296,12 +303,12 @@ class Rook(Piece):
 
 class Queen(Piece):
     SYMBOL = 'Q'
+    RANGE = INFINITY
     
     def _is_valid_move(self, new_file, new_rank):
         return (self._is_valid_rank_move(new_file, new_rank) or
                 self._is_valid_file_move(new_file, new_rank) or
                 self._is_valid_diagonal_move(new_file, new_rank))
-
 
     def attacks(self):
         return (self._rank_squares() |
@@ -311,24 +318,22 @@ class Queen(Piece):
 
 class King(Piece):
     SYMBOL = 'K'
+    RANGE = 1
 
     def _is_valid_move(self, new_file, new_rank):
-        return (self._is_valid_rank_move(new_file, new_rank, piece_range=1) or
-                self._is_valid_file_move(new_file, new_rank, piece_range=1) or
-                self._is_valid_diagonal_move(new_file, new_rank, piece_range=1))
-
+        return (self._is_valid_rank_move(new_file, new_rank) or
+                self._is_valid_file_move(new_file, new_rank) or
+                self._is_valid_diagonal_move(new_file, new_rank))
 
     def attacks(self):
-        return set()
-        #return (self._rank_squares(piece_range=1) |
-        #        self._file_squares(piece_range=1) |
-        #        self._diagonal_squares(piece_range=1))
+        return (self._rank_squares() |
+                self._file_squares() |
+                self._diagonal_squares())
 
 
 class Board(object):
     def __init__(self):
         self.clear()
-        self.debug = False
 
     def as_grid(self):
         ranks = []
@@ -526,7 +531,7 @@ class BishopTests(_PieceTests):
 class KingTests(_PieceTests):
     def setUp(self):
         super(KingTests, self).setUp()
-        self.board.set_piece(King, WHITE, 'b', 2)
+        self.king = self.board.set_piece(King, WHITE, 'b', 2)
 
     def test_allow_one_square_north(self):
         self.board.move_piece('b', 2, 'b', 3)
@@ -563,6 +568,15 @@ class KingTests(_PieceTests):
     def test_disallow_two_square_north_east(self):
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'd', 4)
+
+    def test_attack_squares_unblocked(self):
+        self.assertPieceAttacks(self.king, 'b', 3)
+        self.assertPieceAttacks(self.king, 'c', 2)
+        self.assertPieceAttacks(self.king, 'c', 3)
+
+        self.assertPieceDoesNotAttack(self.king, 'b', 4)
+        self.assertPieceDoesNotAttack(self.king, 'd', 2)
+        self.assertPieceDoesNotAttack(self.king, 'd', 4)
 
 
 class RookTests(_PieceTests):
