@@ -50,6 +50,11 @@ class BishopMustMoveDiagonal(MoveNotAllowed):
     pass
 
 
+class CannotMoveToOccupiedSquare(MoveNotAllowed):
+    pass
+
+
+
 class Piece(object):
     def __init__(self, board, color, file, rank):
         self.board = board
@@ -224,21 +229,31 @@ class Board(object):
             self.set_piece(King, color, file, 5)
 
     def check_piece_placement(self, file, rank):
+        # Make sure the file is on the board
         if file not in FILES:
             raise NotAValidFile
 
+        # Make sure the rank is on the board
         if rank not in RANKS:
             raise NotAValidRank
 
     def move_piece(self, file, rank, new_file, new_rank):
         self.check_piece_placement(file, rank)
 
+        # Make sure we're not moving to the same square
         if file == new_file and rank == new_rank:
             raise CannotMoveToSameSquare
 
         piece = self[file][rank]
+
         if not piece:
             raise NoPieceThere
+
+        # Make sure we're not moving to square occupied by our own piece
+        piece_on_dest_square = self[new_file][new_rank]
+        if piece_on_dest_square and piece_on_dest_square.color == piece.color:
+            raise CannotMoveToOccupiedSquare
+
         piece.move(new_file, new_rank)
         self[new_file][new_rank] = piece
         self[file][rank] = None
@@ -264,6 +279,13 @@ class BoardTests(unittest.TestCase):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
         with self.assertRaises(CannotMoveToSameSquare):
             self.board.move_piece('b', 2, 'b', 2)
+
+    def test_cannot_move_to_occupied_square(self):
+        self.board.set_piece(Rook, WHITE, 'a', 1)
+        self.board.set_piece(Pawn, WHITE, 'a', 2)
+        with self.assertRaises(CannotMoveToOccupiedSquare):
+            self.board.move_piece('a', 1, 'a', 2)
+
 
 
 class _PieceTests(unittest.TestCase):
