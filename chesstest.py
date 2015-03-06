@@ -261,6 +261,17 @@ class BoardTests(unittest.TestCase):
         with self.assertRaises(CannotMoveToOccupiedSquare):
             self.board.move_piece('a', 1, 'a', 2)
 
+    def test_cannot_move_along_occupied_file(self):
+        self.board.set_piece(Rook, WHITE, 'a', 1)
+        self.board.set_piece(Pawn, WHITE, 'a', 2)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('a', 1, 'a', 3)
+
+    def test_cannot_move_along_occupied_rank(self):
+        pass
+
+    def test_cannot_move_along_occupied_diagonal(self):
+        pass
 
 
 class _PieceTests(unittest.TestCase):
