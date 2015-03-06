@@ -202,7 +202,7 @@ class King(Piece):
 
 class Board(object):
     def __init__(self):
-        self.clear_board()
+        self.clear()
         self.debug = False
 
     def as_grid(self):
@@ -225,17 +225,20 @@ class Board(object):
     def __getitem__(self, file):
         return self.state[file]
 
-    def clear_board(self):
+    def clear(self):
         self.state = {}
         for file in FILES:
             self.state[file] = {}
             for rank in RANKS:
                 self.state[file][rank] = None
 
+        self.captured_pieces = {WHITE: [], BLACK: []}
+
     def set_piece(self, piece_class, color, file, rank):
         self.check_piece_placement(file, rank)
         piece = piece_class(self, color, file, rank)
         self[file][rank] = piece
+        return piece
 
     def setup_pieces(self):
         for rank in RANKS:
@@ -275,8 +278,11 @@ class Board(object):
 
         # Make sure we're not moving to square occupied by our own piece
         piece_on_dest_square = self[new_file][new_rank]
-        if piece_on_dest_square and piece_on_dest_square.color == piece.color:
-            raise CannotMoveToOccupiedSquare
+        if piece_on_dest_square:
+            if piece_on_dest_square.color == piece.color:
+                raise CannotMoveToOccupiedSquare
+            else:
+                self.captured_pieces[piece.color].append(piece_on_dest_square)
 
         piece.move(new_file, new_rank)
         self[new_file][new_rank] = piece
@@ -328,11 +334,17 @@ class BoardTests(unittest.TestCase):
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('c', 1, 'a', 3)
 
+    def test_capture(self):
+        self.assertEqual([], self.board.captured_pieces[WHITE])
+        self.board.set_piece(Rook, WHITE, 'a', 1)
+        black_pawn = self.board.set_piece(Pawn, BLACK, 'a', 7)
+        self.board.move_piece('a', 1, 'a', 7)
+        self.assertEqual([black_pawn], self.board.captured_pieces[WHITE])
+
 
 class _PieceTests(unittest.TestCase):
     def setUp(self):
         self.board = Board()
-
 
 
 class BishopTests(_PieceTests):

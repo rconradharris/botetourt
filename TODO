@@ -1,6 +1,9 @@
-- Add captures
+- Detect check
+    - Add king cannot move into 'check' check
+- Detect checkmate
+
 - Add castling rule check
 - Pawn promotion
-- Detect check
-- Detect checkmate
 - Detect stalemate
+- En passant
+
