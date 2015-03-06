@@ -360,7 +360,25 @@ class King(Piece):
     RANGE = 1
     OMNIDIRECTIONAL = True
 
+    def _is_square_attacked(self, file, rank):
+        opposite_color = BLACK if self.color == WHITE else WHITE
+        pieces = self.board.get_pieces_by_color(opposite_color)
+
+        squares = set()
+        for piece in pieces:
+            squares |= piece.attacks()
+
+        return (file, rank) in squares
+
+    def in_check(self):
+        """A king is in check if he is attacked by any of his opponents
+        pieces
+        """
+        return self._is_square_attacked(self.file, self.rank)
+
     def _is_valid_move(self, new_file, new_rank):
+        if self._is_square_attacked(new_file, new_rank):
+            return False
         return (self._is_valid_rank_move(new_file, new_rank) or
                 self._is_valid_file_move(new_file, new_rank) or
                 self._is_valid_diagonal_move(new_file, new_rank))
@@ -394,6 +412,13 @@ class Board(object):
 
     def __getitem__(self, file):
         return self.state[file]
+
+    def get_pieces_by_color(self, color):
+        for file in FILES:
+            for rank in RANKS:
+                piece = self.state[file][rank]
+                if piece and piece.color == color:
+                    yield piece
 
     def clear(self):
         self.state = {}
@@ -617,6 +642,17 @@ class KingTests(_PieceTests):
         self.assertPieceDoesNotAttack(self.king, 'b', 4)
         self.assertPieceDoesNotAttack(self.king, 'd', 2)
         self.assertPieceDoesNotAttack(self.king, 'd', 4)
+
+    def test_check(self):
+        self.black_king = self.board.set_piece(King, BLACK, 'b', 8)
+        rook = self.board.set_piece(Rook, WHITE, 'b', 3)
+        self.assertTrue(self.black_king.in_check())
+        self.assertFalse(self.king.in_check())
+
+    def test_cannot_move_into_check(self):
+        self.black_king = self.board.set_piece(King, BLACK, 'b', 4)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'b', 3)
 
 
 class RookTests(_PieceTests):

@@ -1,13 +1,6 @@
 Rules
 =====
 
-- Detect check
-    - Pieces attack squares
-    - The union of the opponents attacked squares is the set of squares the
-      put the king in check
-
-    - Add king cannot move into 'check' check
-
 - Detect checkmate
 
 - Add castling rule check
