@@ -49,6 +49,41 @@ class Piece(object):
     def __repr__(self):
         return str(self)
 
+    def _diagonal_squares(self):
+        """Return all squares attacked along the diagonals by a piece."""
+        squares = set()
+
+        easterly = self._get_files_in_between_inclusive(FILES[-1])
+        westerly = self._get_files_in_between_inclusive(FILES[0])
+        northerly = self._get_ranks_in_between_inclusive(RANKS[-1])
+        southerly = self._get_ranks_in_between_inclusive(RANKS[0])
+
+        # Going north east
+        for file, rank in zip(easterly, northerly):
+            squares.add((file, rank))
+            if file != self.file and rank != self.rank and self.board[file][rank]:
+                break
+
+        # Going north west
+        for file, rank in zip(westerly, northerly):
+            squares.add((file, rank))
+            if file != self.file and rank != self.rank and self.board[file][rank]:
+                break
+
+        # Going south east
+        for file, rank in zip(easterly, southerly):
+            squares.add((file, rank))
+            if file != self.file and rank != self.rank and self.board[file][rank]:
+                break
+
+        # Going south west
+        for file, rank in zip(westerly, southerly):
+            squares.add((file, rank))
+            if file != self.file and rank != self.rank and self.board[file][rank]:
+                break
+
+        return squares
+
     def _rank_squares(self):
         """Return all squares attacked along the rank by a piece."""
         squares = set()
@@ -242,6 +277,9 @@ class Bishop(Piece):
 
     def _is_valid_move(self, new_file, new_rank):
         return self._is_valid_diagonal_move(new_file, new_rank)
+
+    def attacks(self):
+        return self._diagonal_squares()
 
 
 class Rook(Piece):
@@ -462,6 +500,21 @@ class BishopTests(_PieceTests):
     def test_can_move_north_east_two_spaces(self):
         self.board.set_piece(Bishop, WHITE, 'b', 2)
         self.board.move_piece('b', 2, 'd', 4)
+
+    def test_attack_squares_unblocked(self):
+        bishop = self.board.set_piece(Bishop, WHITE, 'd', 4)
+        self.assertPieceAttacks(bishop, 'd', 4)
+        self.assertPieceAttacks(bishop, 'e', 5)
+        self.assertPieceAttacks(bishop, 'f', 6)
+        self.assertPieceAttacks(bishop, 'c', 3)
+        self.assertPieceDoesNotAttack(bishop, 'd', 5)
+
+    def test_attack_squares_blocked(self):
+        bishop = self.board.set_piece(Bishop, WHITE, 'd', 4)
+        pawn = self.board.set_piece(Pawn, WHITE, 'e', 5)
+        self.assertPieceAttacks(bishop, 'd', 4)
+        self.assertPieceAttacks(bishop, 'e', 5)
+        self.assertPieceDoesNotAttack(bishop, 'f', 6)
 
 
 class KingTests(_PieceTests):
