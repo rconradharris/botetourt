@@ -303,6 +303,12 @@ class Queen(Piece):
                 self._is_valid_diagonal_move(new_file, new_rank))
 
 
+    def attacks(self):
+        return (self._rank_squares() |
+                self._file_squares() |
+                self._diagonal_squares())
+
+
 class King(Piece):
     SYMBOL = 'K'
 
