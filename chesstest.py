@@ -4,6 +4,9 @@ FILES = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 RANKS = range(1, 9)
 WHITE = 'w'
 BLACK = 'b'
+INFINITY = 999
+NORTH = 'north'
+SOUTH = 'south'
 
 
 class ChessException(Exception):
@@ -30,26 +33,6 @@ class CannotMoveToSameSquare(MoveNotAllowed):
     pass
 
 
-class PawnCannotMoveSideways(MoveNotAllowed):
-    pass
-
-
-class CannotMoveThatManySquares(MoveNotAllowed):
-    pass
-
-
-class PawnCannotMoveBackwards(MoveNotAllowed):
-    pass
-
-
-class RookCannotMoveDiagonal(MoveNotAllowed):
-    pass
-
-
-class BishopMustMoveDiagonal(MoveNotAllowed):
-    pass
-
-
 class CannotMoveToOccupiedSquare(MoveNotAllowed):
     pass
 
@@ -70,11 +53,38 @@ class Piece(object):
     def __repr__(self):
         return str(self)
 
-    def check_valid_move(self, new_file, new_rank):
-        pass
+    def _delta_file_rank(self, new_file, new_rank):
+        delta_file = FILES.index(new_file) - FILES.index(self.file)
+        delta_rank = new_rank - self.rank
+        return delta_file, delta_rank
+
+    def _is_valid_file_move(self, new_file, new_rank, piece_range=INFINITY,
+                            direction_allowed=None):
+        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
+
+        if direction_allowed == NORTH and delta_rank < 0:
+            return False
+        elif direction_allowed == SOUTH and delta_rank > 0:
+            return False
+        else:
+            return delta_file == 0 and abs(delta_rank) <= piece_range
+
+    def _is_valid_rank_move(self, new_file, new_rank, piece_range=INFINITY):
+        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
+        return delta_rank == 0 and abs(delta_file) <= piece_range
+
+    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=INFINITY):
+        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
+        rank_squares = abs(delta_rank)
+        file_squares = abs(delta_file)
+        return rank_squares == file_squares and file_squares <= piece_range
+
+    def _is_valid_move(self, new_file, new_rank):
+        return False
 
     def move(self, new_file, new_rank):
-        self.check_valid_move(new_file, new_rank)
+        if not self._is_valid_move(new_file, new_rank):
+            raise MoveNotAllowed
         self.file = new_file
         self.rank = new_rank
         self.moved = True
@@ -83,98 +93,63 @@ class Piece(object):
 class Pawn(Piece):
     SYMBOL = 'P'
 
-    def check_valid_move(self, new_file, new_rank):
-        # A pawn can only push forward or backward
-        if new_file != self.file:
-            raise PawnCannotMoveSideways
-
-        delta_rank = new_rank - self.rank
-
+    def _is_valid_move(self, new_file, new_rank):
         # A pawn can push two squares forward on first move, otherwise it can
         # only push one square
-        max_squares = 1 if self.moved else 2
+        piece_range = 1 if self.moved else 2
 
-        if abs(delta_rank) > max_squares:
-            raise CannotMoveThatManySquares
+        # White must march North, Black south
+        direction_allowed = NORTH if self.color == WHITE else SOUTH
 
-        # White can only move North
-        if delta_rank < 0 and self.color == WHITE:
-            raise PawnCannotMoveBackwards
-
-        # Black can only move South
-        if delta_rank > 0 and self.color == BLACK:
-            raise PawnCannotMoveBackwards
+        return self._is_valid_file_move(new_file, new_rank,
+                                        piece_range=piece_range,
+                                        direction_allowed=direction_allowed)
 
 
 class Knight(Piece):
     SYMBOL = 'K'
 
-    def check_valid_move(self, new_file, new_rank):
-        delta_rank = new_rank - self.rank
-        delta_file = FILES.index(new_file) - FILES.index(self.file)
+    def _is_valid_move(self, new_file, new_rank):
+        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
+
         # A knight can move 2 spaces along a rank but must move one space
-        # along file
-        if abs(delta_rank) == 2 and abs(delta_file) == 1:
-            pass
-        # Or vice versa...
-        elif abs(delta_file) == 2 and abs(delta_rank) == 1:
-            pass
-        else:
-            raise MoveNotAllowed
+        # along file or vice versa
+        return ((abs(delta_rank) == 2 and abs(delta_file) == 1) or
+                (abs(delta_file) == 2 and abs(delta_rank) == 1))
 
 
 class Bishop(Piece):
     SYMBOL = 'B'
 
-    def check_valid_move(self, new_file, new_rank):
-        delta_rank = new_rank - self.rank
-        delta_file = FILES.index(new_file) - FILES.index(self.file)
-
-        # A bishop must move along a diagonal
-        if abs(delta_rank) != abs(delta_file):
-            raise BishopMustMoveDiagonal
+    def _is_valid_move(self, new_file, new_rank):
+        return self._is_valid_diagonal_move(new_file, new_rank)
 
 
 class Rook(Piece):
     SYMBOL = 'R'
 
-    def check_valid_move(self, new_file, new_rank):
+    def _is_valid_move(self, new_file, new_rank):
         # A rook must move along a single rank or file
-        if new_file != self.file and new_rank != self.rank:
-            raise RookCannotMoveDiagonal
+        return (self._is_valid_rank_move(new_file, new_rank) or
+                self._is_valid_file_move(new_file, new_rank))
 
 
 class Queen(Piece):
     SYMBOL = 'Q'
     
-    def check_valid_move(self, new_file, new_rank):
-        delta_rank = new_rank - self.rank
-        delta_file = FILES.index(new_file) - FILES.index(self.file)
-
-        # A queen can move along any file
-        if new_file == self.file:
-            pass
-        # Or any rank
-        elif new_rank == self.rank:
-            pass
-        # Or along any diagonal
-        elif abs(delta_file) != abs(delta_rank):
-            raise MoveNotAllowed
+    def _is_valid_move(self, new_file, new_rank):
+        return (self._is_valid_rank_move(new_file, new_rank) or
+                self._is_valid_file_move(new_file, new_rank) or
+                self._is_valid_diagonal_move(new_file, new_rank))
 
 
 class King(Piece):
     SYMBOL = 'K'
 
-    def check_valid_move(self, new_file, new_rank):
-        # A king can move one square in any direction
-        delta_rank = new_rank - self.rank
-        if abs(delta_rank) > 1:
-            raise CannotMoveThatManySquares
-
-        delta_file = FILES.index(new_file) - FILES.index(self.file)
-        if abs(delta_file) > 1:
-            raise CannotMoveThatManySquares
-
+    def _is_valid_move(self, new_file, new_rank):
+        return (self._is_valid_rank_move(new_file, new_rank, piece_range=1) or
+                self._is_valid_file_move(new_file, new_rank, piece_range=1) or
+                self._is_valid_diagonal_move(new_file, new_rank, piece_range=1))
 
 
 class Board(object):
@@ -297,7 +272,7 @@ class _PieceTests(unittest.TestCase):
 class BishopTests(_PieceTests):
     def test_cannot_move_north(self):
         self.board.set_piece(Bishop, WHITE, 'b', 2)
-        with self.assertRaises(BishopMustMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'b', 3)
 
     def test_can_move_north_east(self):
@@ -306,7 +281,7 @@ class BishopTests(_PieceTests):
 
     def test_cannot_move_east(self):
         self.board.set_piece(Bishop, WHITE, 'b', 2)
-        with self.assertRaises(BishopMustMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'c', 2)
 
     def test_can_move_south_east(self):
@@ -315,7 +290,7 @@ class BishopTests(_PieceTests):
 
     def test_cannot_move_south(self):
         self.board.set_piece(Bishop, WHITE, 'b', 2)
-        with self.assertRaises(BishopMustMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'b', 1)
 
     def test_can_move_south_west(self):
@@ -324,7 +299,7 @@ class BishopTests(_PieceTests):
 
     def test_cannot_move_west(self):
         self.board.set_piece(Bishop, WHITE, 'b', 2)
-        with self.assertRaises(BishopMustMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'a', 2)
 
     def test_can_move_north_west(self):
@@ -365,9 +340,17 @@ class KingTests(_PieceTests):
     def test_allow_one_square_north_west(self):
         self.board.move_piece('b', 2, 'a', 3)
 
-    def test_disallow_two_square_move(self):
-        with self.assertRaises(CannotMoveThatManySquares):
+    def test_disallow_two_square_north(self):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'b', 4)
+
+    def test_disallow_two_square_east(self):
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'd', 2)
+
+    def test_disallow_two_square_north_east(self):
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'd', 4)
 
 
 class RookTests(_PieceTests):
@@ -389,22 +372,22 @@ class RookTests(_PieceTests):
 
     def test_cannot_move_north_east(self):
         self.board.set_piece(Rook, WHITE, 'b', 2)
-        with self.assertRaises(RookCannotMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'c', 3)
 
     def test_cannot_move_south_east(self):
         self.board.set_piece(Rook, WHITE, 'b', 2)
-        with self.assertRaises(RookCannotMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'c', 1)
 
     def test_cannot_move_south_west(self):
         self.board.set_piece(Rook, WHITE, 'b', 2)
-        with self.assertRaises(RookCannotMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'a', 1)
 
     def test_cannot_move_north_west(self):
         self.board.set_piece(Rook, WHITE, 'b', 2)
-        with self.assertRaises(RookCannotMoveDiagonal):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'a', 3)
 
 
@@ -418,29 +401,29 @@ class PawnTests(_PieceTests):
 
     def test_disallow_push_sideways(self):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
-        with self.assertRaises(PawnCannotMoveSideways):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'c', 2)
 
         self.board.set_piece(Pawn, BLACK, 'g', 7)
-        with self.assertRaises(PawnCannotMoveSideways):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('g', 7, 'h', 7)
 
     def test_disallow_push_three_squares(self):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
-        with self.assertRaises(CannotMoveThatManySquares):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'b', 5)
 
         self.board.set_piece(Pawn, BLACK, 'g', 7)
-        with self.assertRaises(CannotMoveThatManySquares):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('g', 7, 'g', 4)
 
     def test_disallow_push_backwards(self):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
-        with self.assertRaises(PawnCannotMoveBackwards):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'b', 1)
 
         self.board.set_piece(Pawn, BLACK, 'g', 7)
-        with self.assertRaises(PawnCannotMoveBackwards):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('g', 7, 'g', 8)
 
     def test_allow_two_square_push_on_first_move(self):
@@ -453,12 +436,12 @@ class PawnTests(_PieceTests):
     def test_disallow_two_square_push_on_second_move(self):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
         self.board.move_piece('b', 2, 'b', 4)
-        with self.assertRaises(CannotMoveThatManySquares):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 4, 'b', 6)
 
         self.board.set_piece(Pawn, BLACK, 'g', 7)
         self.board.move_piece('g', 7, 'g', 5)
-        with self.assertRaises(CannotMoveThatManySquares):
+        with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('g', 5, 'g', 3)
 
 
