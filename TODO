@@ -1,6 +1,15 @@
 Rules
 =====
 
+- Attack Squares
+    - Rook [DONE]
+    - Bishop
+    - Queen
+    - King
+    - Pawn
+    - Knight
+
+
 - Detect check
     - Pieces attack squares
     - The union of the opponents attacked squares is the set of squares the

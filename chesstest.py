@@ -1,7 +1,7 @@
 import unittest
 
-FILES = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
-RANKS = range(1, 9)
+FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+RANKS = [1, 2, 3, 4, 5, 6, 7, 8]
 WHITE = 'w'
 BLACK = 'b'
 INFINITY = 999
@@ -21,11 +21,7 @@ class MoveNotAllowed(ChessException):
     pass
 
 
-class NotAValidFile(MoveNotAllowed):
-    pass
-
-
-class NotAValidRank(MoveNotAllowed):
+class NotAValidSquare(MoveNotAllowed):
     pass
 
 
@@ -53,19 +49,60 @@ class Piece(object):
     def __repr__(self):
         return str(self)
 
+    def _rank_squares(self):
+        """Return all squares attacked along the rank by a piece."""
+        squares = set()
+
+        # Going east
+        for file in self._get_files_in_between_inclusive(FILES[-1]):
+            squares.add((file, self.rank))
+            if file != self.file and self.board[file][self.rank]:
+                break
+
+        # Going west
+        for file in self._get_files_in_between_inclusive(FILES[0]):
+            squares.add((file, self.rank))
+            if file != self.file and self.board[file][self.rank]:
+                break
+
+        return squares
+
+    def _file_squares(self):
+        """Return all squares attacked along the file by a piece."""
+        squares = set()
+
+        # Going north
+        for rank in self._get_ranks_in_between_inclusive(RANKS[-1]):
+            squares.add((self.file, rank))
+            if rank != self.rank and self.board[self.file][rank]:
+                break
+
+        # Going south
+        for rank in self._get_ranks_in_between_inclusive(RANKS[0]):
+            squares.add((self.file, rank))
+            if rank != self.rank and self.board[self.file][rank]:
+                break
+
+        return squares
+
     def _delta_file_rank(self, new_file, new_rank):
         delta_file = FILES.index(new_file) - FILES.index(self.file)
         delta_rank = new_rank - self.rank
         return delta_file, delta_rank
 
-    def _get_ranks_in_between(self, new_rank):
+    def _get_ranks_in_between_inclusive(self, new_rank):
         if self.rank < new_rank:
-            return RANKS[self.rank:new_rank-1]
+            return RANKS[self.rank-1:new_rank]
         else:
-            return RANKS[new_rank:self.rank-1]
+            ranks = RANKS[new_rank-1:self.rank]
+            ranks.reverse()
+            return ranks
+
+    def _get_ranks_in_between_exclusive(self, new_rank):
+        return self._get_ranks_in_between_inclusive(new_rank)[1:-1]
 
     def _is_file_blocked(self, new_rank):
-        ranks_in_between = self._get_ranks_in_between(new_rank)
+        ranks_in_between = self._get_ranks_in_between_exclusive(new_rank)
 
         for rank in ranks_in_between:
             if self.board[self.file][rank]:
@@ -86,16 +123,21 @@ class Piece(object):
                     abs(delta_rank) <= piece_range and 
                     not self._is_file_blocked(new_rank))
 
-    def _get_files_in_between(self, new_file):
+    def _get_files_in_between_inclusive(self, new_file):
         orig_idx = FILES.index(self.file)
         new_idx = FILES.index(new_file)
         if orig_idx < new_idx:
-            return FILES[orig_idx+1:new_idx]
+            return FILES[orig_idx:new_idx+1]
         else:
-            return FILES[new_idx+1:orig_idx]
+            files = FILES[new_idx:orig_idx+1]
+            files.reverse()
+            return files
+
+    def _get_files_in_between_exclusive(self, new_file):
+        return self._get_files_in_between_inclusive(new_file)[1:-1]
 
     def _is_rank_blocked(self, new_file):
-        files_in_between = self._get_files_in_between(new_file)
+        files_in_between = self._get_files_in_between_exclusive(new_file)
 
         for file in files_in_between:
             if self.board[file][self.rank]:
@@ -110,8 +152,8 @@ class Piece(object):
                 not self._is_rank_blocked(new_file))
 
     def _is_diagonal_blocked(self, new_file, new_rank):
-        ranks_in_between = self._get_ranks_in_between(new_rank)
-        files_in_between = self._get_files_in_between(new_file)
+        ranks_in_between = self._get_ranks_in_between_exclusive(new_rank)
+        files_in_between = self._get_files_in_between_exclusive(new_file)
 
         for file, rank in zip(files_in_between, ranks_in_between):
             if self.board[file][rank]:
@@ -155,6 +197,9 @@ class Piece(object):
         self.file = new_file
         self.rank = new_rank
         self.moved = True
+
+    def attacks(self):
+        return set()
 
 
 class Pawn(Piece):
@@ -207,6 +252,9 @@ class Rook(Piece):
         return (self._is_valid_rank_move(new_file, new_rank) or
                 self._is_valid_file_move(new_file, new_rank))
 
+    def attacks(self):
+        return self._rank_squares() | self._file_squares()
+
 
 class Queen(Piece):
     SYMBOL = 'Q'
@@ -224,6 +272,13 @@ class King(Piece):
         return (self._is_valid_rank_move(new_file, new_rank, piece_range=1) or
                 self._is_valid_file_move(new_file, new_rank, piece_range=1) or
                 self._is_valid_diagonal_move(new_file, new_rank, piece_range=1))
+
+
+    def attacks(self):
+        return set()
+        #return (self._rank_squares(piece_range=1) |
+        #        self._file_squares(piece_range=1) |
+        #        self._diagonal_squares(piece_range=1))
 
 
 class Board(object):
@@ -261,7 +316,9 @@ class Board(object):
         self.captured_pieces = {WHITE: [], BLACK: []}
 
     def set_piece(self, piece_class, color, file, rank):
-        self.check_piece_placement(file, rank)
+        if not self.is_valid_square(file, rank):
+            raise NotAValidSquare
+
         piece = piece_class(self, color, file, rank)
         self[file][rank] = piece
         return piece
@@ -281,17 +338,12 @@ class Board(object):
             self.set_piece(Queen, color, file, 4)
             self.set_piece(King, color, file, 5)
 
-    def check_piece_placement(self, file, rank):
-        # Make sure the file is on the board
-        if file not in FILES:
-            raise NotAValidFile
-
-        # Make sure the rank is on the board
-        if rank not in RANKS:
-            raise NotAValidRank
+    def is_valid_square(self, file, rank):
+        return file in FILES and rank in RANKS
 
     def move_piece(self, file, rank, new_file, new_rank):
-        self.check_piece_placement(file, rank)
+        if not self.is_valid_square(file, rank):
+            raise NotAValidSquare
 
         # Make sure we're not moving to the same square
         if file == new_file and rank == new_rank:
@@ -312,14 +364,14 @@ class BoardTests(unittest.TestCase):
         self.board = Board()
 
     def test_invalid_file(self):
-        with self.assertRaises(NotAValidFile):
+        with self.assertRaises(NotAValidSquare):
             self.board.set_piece(Pawn, WHITE, 'i', 2)
 
     def test_invalid_rank(self):
-        with self.assertRaises(NotAValidRank):
+        with self.assertRaises(NotAValidSquare):
             self.board.set_piece(Pawn, WHITE, 'h', 0)
 
-        with self.assertRaises(NotAValidRank):
+        with self.assertRaises(NotAValidSquare):
             self.board.set_piece(Pawn, WHITE, 'h', 9)
 
     def test_cannot_move_to_same_square(self):
@@ -362,6 +414,12 @@ class BoardTests(unittest.TestCase):
 class _PieceTests(unittest.TestCase):
     def setUp(self):
         self.board = Board()
+
+    def assertPieceAttacks(self, piece, file, rank):
+        self.assertIn((file, rank), piece.attacks())
+
+    def assertPieceDoesNotAttack(self, piece, file, rank):
+        self.assertNotIn((file, rank), piece.attacks())
 
 
 class BishopTests(_PieceTests):
@@ -484,6 +542,28 @@ class RookTests(_PieceTests):
         self.board.set_piece(Rook, WHITE, 'b', 2)
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'a', 3)
+
+    def test_attacks_unblocked(self):
+        rook = self.board.set_piece(Rook, WHITE, 'd', 4)
+        self.assertPieceAttacks(rook, 'd', 4)
+        self.assertPieceAttacks(rook, 'f', 4)
+        self.assertPieceAttacks(rook, 'd', 6)
+        self.assertPieceDoesNotAttack(rook, 'f', 5)
+
+    def test_attacks_blocked(self):
+        rook = self.board.set_piece(Rook, WHITE, 'a', 1)
+        self.board.set_piece(Pawn, WHITE, 'a', 2)
+        self.assertPieceAttacks(rook, 'a', 1)
+        self.assertPieceAttacks(rook, 'a', 2)
+        self.assertPieceDoesNotAttack(rook, 'a', 3)
+
+        self.assertPieceAttacks(rook, 'c', 1)
+
+        self.board.set_piece(Pawn, WHITE, 'b', 1)
+
+        self.assertPieceAttacks(rook, 'b', 1)
+        self.assertPieceDoesNotAttack(rook, 'c', 1)
+
 
 
 class PawnTests(_PieceTests):
