@@ -58,6 +58,21 @@ class Piece(object):
         delta_rank = new_rank - self.rank
         return delta_file, delta_rank
 
+    def _get_ranks_in_between(self, new_rank):
+        if self.rank < new_rank:
+            return RANKS[self.rank:new_rank-1]
+        else:
+            return RANKS[new_rank:self.rank-1]
+
+    def _is_file_blocked(self, new_rank):
+        ranks_in_between = self._get_ranks_in_between(new_rank)
+
+        for rank in ranks_in_between:
+            if self.board[self.file][rank]:
+                return True
+
+        return False
+
     def _is_valid_file_move(self, new_file, new_rank, piece_range=INFINITY,
                             direction_allowed=None):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
@@ -67,17 +82,50 @@ class Piece(object):
         elif direction_allowed == SOUTH and delta_rank > 0:
             return False
         else:
-            return delta_file == 0 and abs(delta_rank) <= piece_range
+            return (delta_file == 0 and
+                    abs(delta_rank) <= piece_range and 
+                    not self._is_file_blocked(new_rank))
+
+    def _get_files_in_between(self, new_file):
+        orig_idx = FILES.index(self.file)
+        new_idx = FILES.index(new_file)
+        if orig_idx < new_idx:
+            return FILES[orig_idx+1:new_idx]
+        else:
+            return FILES[new_idx+1:orig_idx]
+
+    def _is_rank_blocked(self, new_file):
+        files_in_between = self._get_files_in_between(new_file)
+
+        for file in files_in_between:
+            if self.board[file][self.rank]:
+                return True
+
+        return False
 
     def _is_valid_rank_move(self, new_file, new_rank, piece_range=INFINITY):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
-        return delta_rank == 0 and abs(delta_file) <= piece_range
+        return (delta_rank == 0 and
+                abs(delta_file) <= piece_range and
+                not self._is_rank_blocked(new_file))
+
+    def _is_diagonal_blocked(self, new_file, new_rank):
+        ranks_in_between = self._get_ranks_in_between(new_rank)
+        files_in_between = self._get_files_in_between(new_file)
+
+        for file, rank in zip(files_in_between, ranks_in_between):
+            if self.board[file][rank]:
+                return True
+
+        return False
 
     def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=INFINITY):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
         rank_squares = abs(delta_rank)
         file_squares = abs(delta_file)
-        return rank_squares == file_squares and file_squares <= piece_range
+        return (rank_squares == file_squares and
+                file_squares <= piece_range and
+                not self._is_diagonal_blocked(new_file, new_rank))
 
     def _is_valid_move(self, new_file, new_rank):
         return False
@@ -155,6 +203,7 @@ class King(Piece):
 class Board(object):
     def __init__(self):
         self.clear_board()
+        self.debug = False
 
     def as_grid(self):
         ranks = []
@@ -261,17 +310,23 @@ class BoardTests(unittest.TestCase):
         with self.assertRaises(CannotMoveToOccupiedSquare):
             self.board.move_piece('a', 1, 'a', 2)
 
-    def test_cannot_move_along_occupied_file(self):
+    def test_cannot_move_along_blocked_file(self):
         self.board.set_piece(Rook, WHITE, 'a', 1)
         self.board.set_piece(Pawn, WHITE, 'a', 2)
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('a', 1, 'a', 3)
 
-    def test_cannot_move_along_occupied_rank(self):
-        pass
+    def test_cannot_move_along_blocked_rank(self):
+        self.board.set_piece(Rook, WHITE, 'a', 1)
+        self.board.set_piece(Knight, WHITE, 'b', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('a', 1, 'c', 1)
 
-    def test_cannot_move_along_occupied_diagonal(self):
-        pass
+    def test_cannot_move_along_blocked_diagonal(self):
+        self.board.set_piece(Bishop, WHITE, 'c', 1)
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('c', 1, 'a', 3)
 
 
 class _PieceTests(unittest.TestCase):
@@ -473,13 +528,21 @@ class QueenTests(_PieceTests):
 
 class KnightTests(_PieceTests):
     def test_can_move_two_spaces_east_and_one_space_north(self):
-        self.board.set_piece(Knight, WHITE, 'b', 2)
-        self.board.move_piece('b', 2, 'd', 3)
+        self.board.set_piece(Knight, WHITE, 'b', 1)
+        self.board.move_piece('b', 1, 'c', 3)
 
     def test_cannot_move_one_space_east(self):
-        self.board.set_piece(Knight, WHITE, 'b', 2)
+        self.board.set_piece(Knight, WHITE, 'b', 1)
         with self.assertRaises(MoveNotAllowed):
-            self.board.move_piece('b', 2, 'c', 2)
+            self.board.move_piece('b', 1, 'c', 1)
+
+    def test_can_jump_over_pieces(self):
+        self.board.set_piece(Knight, WHITE, 'b', 1)
+        self.board.set_piece(Pawn, WHITE, 'a', 2)
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        self.board.set_piece(Pawn, WHITE, 'c', 2)
+
+        self.board.move_piece('b', 1, 'c', 3)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,3 @@
-- Detect if a movement crosses an occupied square (except for knight)
 - Add captures
 - Add castling rule check
 - Pawn promotion
