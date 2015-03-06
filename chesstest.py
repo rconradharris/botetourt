@@ -65,17 +65,21 @@ class Piece(object):
                 if file != self.file and rank != self.rank and self.board[file][rank]:
                     break
 
-        # Going north east
-        _traverse_diag(easterly, northerly)
+        # Pawns are not omnidirection and therefore must atack north if white,
+        # or south if black
+        if self.OMNIDIRECTIONAL or self.color == WHITE:
+            # Going north east
+            _traverse_diag(easterly, northerly)
 
-        # Going north west
-        _traverse_diag(westerly, northerly)
+            # Going north west
+            _traverse_diag(westerly, northerly)
 
-        # Going south east
-        _traverse_diag(easterly, southerly)
+        if self.OMNIDIRECTIONAL or self.color == BLACK:
+            # Going south east
+            _traverse_diag(easterly, southerly)
 
-        # Going south west
-        _traverse_diag(westerly, southerly)
+            # Going south west
+            _traverse_diag(westerly, southerly)
 
         return squares
 
@@ -142,20 +146,22 @@ class Piece(object):
 
         return False
 
-    def _is_valid_file_move(self, new_file, new_rank, piece_range=None,
-                            direction_allowed=None):
+    def _is_valid_file_move(self, new_file, new_rank, piece_range=None):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
 
-        if direction_allowed == NORTH and delta_rank < 0:
+        if self.OMNIDIRECTIONAL:
+            pass
+        elif self.color == WHITE and delta_rank < 0:
             return False
-        elif direction_allowed == SOUTH and delta_rank > 0:
+        elif self.color == BLACK and delta_rank > 0:
             return False
-        else:
-            if piece_range is None:
-                piece_range = self.RANGE
-            return (delta_file == 0 and
-                    abs(delta_rank) <= piece_range and 
-                    not self._is_file_blocked(new_rank))
+
+        if piece_range is None:
+            piece_range = self.RANGE
+
+        return (delta_file == 0 and
+                abs(delta_rank) <= piece_range and
+                not self._is_file_blocked(new_rank))
 
     def _get_files_in_between_inclusive(self, new_file):
         orig_idx = FILES.index(self.file)
@@ -198,22 +204,23 @@ class Piece(object):
 
         return False
 
-    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=None,
-                                direction_allowed=None):
+    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=None):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
 
-        if direction_allowed == NORTH and delta_rank < 0:
+        if self.OMNIDIRECTIONAL:
+            pass
+        elif self.color == WHITE and delta_rank < 0:
             return False
-        elif direction_allowed == SOUTH and delta_rank > 0:
+        elif self.color == BLACK and delta_rank > 0:
             return False
-        else:
-            if piece_range is None:
-                piece_range = self.RANGE
-            rank_squares = abs(delta_rank)
-            file_squares = abs(delta_file)
-            return (rank_squares == file_squares and
-                    file_squares <= piece_range and
-                    not self._is_diagonal_blocked(new_file, new_rank))
+
+        if piece_range is None:
+            piece_range = self.RANGE
+        rank_squares = abs(delta_rank)
+        file_squares = abs(delta_file)
+        return (rank_squares == file_squares and
+                file_squares <= piece_range and
+                not self._is_diagonal_blocked(new_file, new_rank))
 
     def _is_valid_move(self, new_file, new_rank):
         return False
@@ -238,21 +245,18 @@ class Piece(object):
         self.moved = True
 
     def attacks(self):
-        return set()
+        raise NotImplementedError
 
 
 class Pawn(Piece):
     SYMBOL = 'P'
     RANGE = 1
+    OMNIDIRECTIONAL = False
 
     def _is_valid_move(self, new_file, new_rank):
-        # White must march North, Black south
-        direction_allowed = NORTH if self.color == WHITE else SOUTH
-
         piece_on_dest_square = self.board[new_file][new_rank]
         if piece_on_dest_square:
-            return self._is_valid_diagonal_move(new_file, new_rank,
-                                                direction_allowed=direction_allowed)
+            return self._is_valid_diagonal_move(new_file, new_rank)
         else:
             # A pawn can push two squares forward on first move, otherwise it can
             # only push one square
@@ -260,13 +264,16 @@ class Pawn(Piece):
 
             # A pawn is blocked by a piece in front of it
             return self._is_valid_file_move(new_file, new_rank,
-                                            piece_range=piece_range,
-                                            direction_allowed=direction_allowed)
+                                            piece_range=piece_range)
+
+    def attacks(self):
+        return self._diagonal_squares()
 
 
 class Knight(Piece):
     SYMBOL = 'K'
     RANGE = None
+    OMNIDIRECTIONAL = True
 
     def _is_valid_move(self, new_file, new_rank):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
@@ -280,6 +287,7 @@ class Knight(Piece):
 class Bishop(Piece):
     SYMBOL = 'B'
     RANGE = INFINITY
+    OMNIDIRECTIONAL = True
 
     def _is_valid_move(self, new_file, new_rank):
         return self._is_valid_diagonal_move(new_file, new_rank)
@@ -291,6 +299,7 @@ class Bishop(Piece):
 class Rook(Piece):
     SYMBOL = 'R'
     RANGE = INFINITY
+    OMNIDIRECTIONAL = True
 
     def _is_valid_move(self, new_file, new_rank):
         # A rook must move along a single rank or file
@@ -304,6 +313,7 @@ class Rook(Piece):
 class Queen(Piece):
     SYMBOL = 'Q'
     RANGE = INFINITY
+    OMNIDIRECTIONAL = True
     
     def _is_valid_move(self, new_file, new_rank):
         return (self._is_valid_rank_move(new_file, new_rank) or
@@ -319,6 +329,7 @@ class Queen(Piece):
 class King(Piece):
     SYMBOL = 'K'
     RANGE = 1
+    OMNIDIRECTIONAL = True
 
     def _is_valid_move(self, new_file, new_rank):
         return (self._is_valid_rank_move(new_file, new_rank) or
@@ -719,6 +730,14 @@ class PawnTests(_PieceTests):
         self.board.set_piece(Pawn, BLACK, 'b', 2)
         self.board.set_piece(Pawn, WHITE, 'c', 1)
         self.board.move_piece('b', 2, 'c', 1)
+
+    def test_attack_squares_unblocked(self):
+        pawn = self.board.set_piece(Pawn, WHITE, 'd', 4)
+        self.assertPieceAttacks(pawn, 'c', 5)
+        self.assertPieceDoesNotAttack(pawn, 'd', 5)
+        self.assertPieceAttacks(pawn, 'e', 5)
+        self.assertPieceDoesNotAttack(pawn, 'f', 6)
+        self.assertPieceDoesNotAttack(pawn, 'e', 3)
 
 
 class QueenTests(_PieceTests):
