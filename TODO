@@ -1,3 +1,19 @@
+Split up files
+==============
+
+botetourt/
+    board.py
+    exc.py
+    pieces.py
+tests/
+    test.py
+    test_board.py
+    pieces/
+        test_pawn.py
+        test_king.py
+
+
+
 Rules
 =====
 
@@ -10,13 +26,12 @@ Rules
 - Pawn promotion
 - Detect stalemate
 - En passant
-
 - Add move state to determine who's move it is
-- Add move history
 
 Input/Output
 ============
 
+- Add move history
 - Parse PGN
 
 
