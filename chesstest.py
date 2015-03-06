@@ -721,6 +721,13 @@ class QueenTests(_PieceTests):
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'd', 3)
 
+    def test_attack_squares_unblocked(self):
+        queen = self.board.set_piece(Queen, WHITE, 'd', 4)
+        self.assertPieceAttacks(queen, 'h', 4)
+        self.assertPieceAttacks(queen, 'd', 1)
+        self.assertPieceAttacks(queen, 'e', 5)
+        self.assertPieceDoesNotAttack(queen, 'e', 6)
+
 
 class KnightTests(_PieceTests):
     def test_can_move_two_spaces_east_and_one_space_north(self):
