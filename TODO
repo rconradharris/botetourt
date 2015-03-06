@@ -1,0 +1,14 @@
+- Detect if move lands on occupied square
+- Detect if a movement crosses an occupied square (except for knight)
+- Add Knight move rules
+- Add castling rule check
+- Pawn promotion
+- Detect check
+- Detect checkmate
+- Detect stalemate
+
+Cleanup:
+
+- Default piece moves to not allowed and instead have check_valid_move
+  whitelist different kinds of moves (?)
+

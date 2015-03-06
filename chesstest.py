@@ -1,22 +1,3 @@
-"""
-
-1. Need a way of representing the board
-
-2. Need a way of encoding the rules of chess:
-    a. How each piece moves
-    b. How castling works
-    c. How pawn promotion works
-    d. How a check works
-    e. Detecting checkmate
-    f. Detecting stalemate
-
-TODO:
-
-1. Want a common way of testing chess engines
-    A specification for a move input and a specification for a move output along
-    with a specification for the kind of error generated.
-
-"""
 import unittest
 
 FILES = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
@@ -122,6 +103,19 @@ class Pawn(Piece):
 
 class Knight(Piece):
     SYMBOL = 'K'
+
+    def check_valid_move(self, new_file, new_rank):
+        delta_rank = new_rank - self.rank
+        delta_file = FILES.index(new_file) - FILES.index(self.file)
+        # A knight can move 2 spaces along a rank but must move one space
+        # along file
+        if abs(delta_rank) == 2 and abs(delta_file) == 1:
+            pass
+        # Or vice versa...
+        elif abs(delta_file) == 2 and abs(delta_rank) == 1:
+            pass
+        else:
+            raise MoveNotAllowed
 
 
 class Bishop(Piece):
@@ -459,6 +453,17 @@ class QueenTests(_PieceTests):
         self.board.set_piece(Queen, WHITE, 'b', 2)
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('b', 2, 'd', 3)
+
+
+class KnightTests(_PieceTests):
+    def test_can_move_two_spaces_east_and_one_space_north(self):
+        self.board.set_piece(Knight, WHITE, 'b', 2)
+        self.board.move_piece('b', 2, 'd', 3)
+
+    def test_cannot_move_one_space_east(self):
+        self.board.set_piece(Knight, WHITE, 'b', 2)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'c', 2)
 
 
 if __name__ == '__main__':
