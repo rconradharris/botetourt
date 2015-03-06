@@ -1,9 +1,31 @@
+Rules
+=====
+
 - Detect check
+    - Pieces attack squares
+    - The union of the opponents attacked squares is the set of squares the
+      put the king in check
+
     - Add king cannot move into 'check' check
+
 - Detect checkmate
 
 - Add castling rule check
+    - King-side
+    - Queen-side
+
 - Pawn promotion
 - Detect stalemate
 - En passant
 
+- Add move state to determine who's move it is
+- Add move history
+
+Input/Output
+============
+
+- Parse PGN
+
+
+AI
+==

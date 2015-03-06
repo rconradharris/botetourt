@@ -119,20 +119,39 @@ class Piece(object):
 
         return False
 
-    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=INFINITY):
+    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=INFINITY,
+                                direction_allowed=None):
         delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
-        rank_squares = abs(delta_rank)
-        file_squares = abs(delta_file)
-        return (rank_squares == file_squares and
-                file_squares <= piece_range and
-                not self._is_diagonal_blocked(new_file, new_rank))
+
+        if direction_allowed == NORTH and delta_rank < 0:
+            return False
+        elif direction_allowed == SOUTH and delta_rank > 0:
+            return False
+        else:
+            rank_squares = abs(delta_rank)
+            file_squares = abs(delta_file)
+            return (rank_squares == file_squares and
+                    file_squares <= piece_range and
+                    not self._is_diagonal_blocked(new_file, new_rank))
 
     def _is_valid_move(self, new_file, new_rank):
         return False
 
+    def _capture(self, piece):
+        self.board.captured_pieces[self.color].append(piece)
+
     def move(self, new_file, new_rank):
+        piece_on_dest_square = self.board[new_file][new_rank]
+
+        if piece_on_dest_square and piece_on_dest_square.color == self.color:
+            raise CannotMoveToOccupiedSquare
+
         if not self._is_valid_move(new_file, new_rank):
             raise MoveNotAllowed
+
+        if piece_on_dest_square and piece_on_dest_square.color != self.color:
+            self._capture(piece_on_dest_square)
+
         self.file = new_file
         self.rank = new_rank
         self.moved = True
@@ -149,9 +168,16 @@ class Pawn(Piece):
         # White must march North, Black south
         direction_allowed = NORTH if self.color == WHITE else SOUTH
 
-        return self._is_valid_file_move(new_file, new_rank,
-                                        piece_range=piece_range,
-                                        direction_allowed=direction_allowed)
+        piece_on_dest_square = self.board[new_file][new_rank]
+        if piece_on_dest_square:
+            return self._is_valid_diagonal_move(new_file, new_rank,
+                                                piece_range=piece_range,
+                                                direction_allowed=direction_allowed)
+        else:
+            # A pawn is blocked by a piece in front of it
+            return self._is_valid_file_move(new_file, new_rank,
+                                            piece_range=piece_range,
+                                            direction_allowed=direction_allowed)
 
 
 class Knight(Piece):
@@ -276,18 +302,9 @@ class Board(object):
         if not piece:
             raise NoPieceThere
 
-        # Make sure we're not moving to square occupied by our own piece
-        piece_on_dest_square = self[new_file][new_rank]
-        if piece_on_dest_square:
-            if piece_on_dest_square.color == piece.color:
-                raise CannotMoveToOccupiedSquare
-            else:
-                self.captured_pieces[piece.color].append(piece_on_dest_square)
-
         piece.move(new_file, new_rank)
         self[new_file][new_rank] = piece
         self[file][rank] = None
-
 
 
 class BoardTests(unittest.TestCase):
@@ -521,6 +538,34 @@ class PawnTests(_PieceTests):
         self.board.move_piece('g', 7, 'g', 5)
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('g', 5, 'g', 3)
+
+    def test_white_cannot_capture_north(self):
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        self.board.set_piece(Pawn, BLACK, 'b', 3)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'b', 3)
+
+    def test_white_captures_diagonally_north_east(self):
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        self.board.set_piece(Pawn, BLACK, 'c', 3)
+        self.board.move_piece('b', 2, 'c', 3)
+
+    def test_white_cannot_capture_south(self):
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        self.board.set_piece(Pawn, BLACK, 'a', 2)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'c', 3)
+
+    def test_white_cannot_capture_south_east(self):
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        self.board.set_piece(Pawn, BLACK, 'c', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('b', 2, 'c', 1)
+
+    def test_black_can_capture_south_east(self):
+        self.board.set_piece(Pawn, BLACK, 'b', 2)
+        self.board.set_piece(Pawn, WHITE, 'c', 1)
+        self.board.move_piece('b', 2, 'c', 1)
 
 
 class QueenTests(_PieceTests):
