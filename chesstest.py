@@ -284,6 +284,35 @@ class Knight(Piece):
                 (abs(delta_file) == 2 and abs(delta_rank) == 1))
 
 
+    def attacks(self):
+        squares = set()
+
+        old_file_idx = FILES.index(self.file)
+        old_rank_idx = RANKS.index(self.rank)
+
+        def _traverse_knight(file_delta, rank_delta):
+            try:
+                new_file = FILES[old_file_idx + file_delta]
+            except IndexError:
+                return
+            try:
+                new_rank = RANKS[old_rank_idx + rank_delta]
+            except IndexError:
+                return
+            squares.add((new_file, new_rank))
+
+        _traverse_knight(2, 1)
+        _traverse_knight(1, 2)
+        _traverse_knight(-1, 2)
+        _traverse_knight(-2, 1)
+        _traverse_knight(-2, -1)
+        _traverse_knight(-1, -2)
+        _traverse_knight(1, -2)
+        _traverse_knight(2, -1)
+
+        return squares
+
+
 class Bishop(Piece):
     SYMBOL = 'B'
     RANGE = INFINITY
@@ -779,6 +808,18 @@ class KnightTests(_PieceTests):
         self.board.set_piece(Pawn, WHITE, 'c', 2)
 
         self.board.move_piece('b', 1, 'c', 3)
+
+    def test_attack_squares(self):
+        knight = self.board.set_piece(Knight, WHITE, 'd', 4)
+        self.assertPieceAttacks(knight, 'e', 6)
+        self.assertPieceAttacks(knight, 'f', 5)
+        self.assertPieceAttacks(knight, 'f', 3)
+        self.assertPieceAttacks(knight, 'e', 2)
+
+        self.assertPieceAttacks(knight, 'c', 2)
+        self.assertPieceAttacks(knight, 'b', 3)
+        self.assertPieceAttacks(knight, 'b', 5)
+        self.assertPieceAttacks(knight, 'c', 6)
 
 
 if __name__ == '__main__':
