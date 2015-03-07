@@ -29,10 +29,15 @@ class Piece(object):
         southerly = self._get_ranks_in_between_inclusive(RANKS[0])
 
         def _traverse_diag(file_dir, rank_dir):
-            for file, rank in zip(file_dir, rank_dir)[:self.RANGE+1]:
-                squares.add((file, rank))
-                if file != self.file and rank != self.rank and self.board[file][rank]:
+            for file, rank in zip(file_dir, rank_dir)[1:self.RANGE+1]:
+                piece = self.board[file][rank]
+                if piece and piece.color == self.color:
                     break
+                elif piece and piece.color != self.color:
+                    squares.add((file, rank))
+                    break
+                else:
+                    squares.add((file, rank))
 
         # Pawns are not omnidirection and therefore must atack north if white,
         # or south if black
@@ -305,8 +310,6 @@ class Bishop(Piece):
 
     def _is_valid_move(self, new_file, new_rank):
         return (new_file, new_rank) in self.legal_moves()
-        #return self._is_valid_diagonal_move(new_file, new_rank)
-
 
 
 class Rook(Piece):

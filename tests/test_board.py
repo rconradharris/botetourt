@@ -76,3 +76,16 @@ class BoardTests(TestCase):
         self.board.set_piece(Bishop, WHITE, 'f', 1)
         with self.assertRaises(MoveNotAllowed):
             self.board.move_piece('h', 1, 'f', 1)
+
+    def test_cannot_capture_own_piece_along_diagonal(self):
+        # White can capture black
+        self.board.set_piece(Bishop, WHITE, 'c', 1)
+        self.board.set_piece(Pawn, BLACK, 'a', 3)
+        self.board.move_piece('c', 1, 'a', 3)
+
+        # But not white
+        self.board.set_piece(Bishop, WHITE, 'f', 1)
+        self.board.set_piece(Pawn, WHITE, 'h', 3)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('f', 1, 'h', 3)
+

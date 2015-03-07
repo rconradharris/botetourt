@@ -3,11 +3,13 @@ Rules
 
 - Use legal_moves() for
     - Rook [DONE]
-    - Bishop
+    - Bishop [DONE]
     - Queen
     - King
     - Knight
     - Pawn
+
+- Remove _is_valid_move() just use (x,y) in legal_moves()
 
 - legal_moves()
 
@@ -18,7 +20,6 @@ Rules
 
 - _is_valid_move(new_file, new_rank)
     (new_file, new_rank) in legal_moves
-
 
 
 - Detect checkmate

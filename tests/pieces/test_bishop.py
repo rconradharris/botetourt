@@ -48,7 +48,6 @@ class BishopTests(TestCase):
 
     def test_attack_squares_unblocked(self):
         bishop = self.board.set_piece(Bishop, WHITE, 'd', 4)
-        self.assertPieceAttacks(bishop, 'd', 4)
         self.assertPieceAttacks(bishop, 'e', 5)
         self.assertPieceAttacks(bishop, 'f', 6)
         self.assertPieceAttacks(bishop, 'c', 3)
@@ -57,8 +56,6 @@ class BishopTests(TestCase):
     def test_attack_squares_blocked(self):
         bishop = self.board.set_piece(Bishop, WHITE, 'd', 4)
         pawn = self.board.set_piece(Pawn, WHITE, 'e', 5)
-        self.assertPieceAttacks(bishop, 'd', 4)
-        self.assertPieceAttacks(bishop, 'e', 5)
         self.assertPieceDoesNotAttack(bishop, 'f', 6)
 
 
