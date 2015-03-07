@@ -88,3 +88,13 @@ class Board(object):
         piece.move(new_file, new_rank)
         self[new_file][new_rank] = piece
         self[file][rank] = None
+
+    def attacked_squares(self, color):
+        """Return all attacked squares for a given color"""
+        squares = set()
+
+        opposite_color = BLACK if color == WHITE else WHITE
+        for piece in self.get_pieces_by_color(opposite_color):
+            squares |= piece.attacks()
+
+        return squares

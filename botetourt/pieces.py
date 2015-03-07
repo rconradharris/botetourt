@@ -333,15 +333,16 @@ class Queen(Piece):
     RANGE = INFINITY
     OMNIDIRECTIONAL = True
 
-    def _is_valid_move(self, new_file, new_rank):
-        return (self._is_valid_rank_move(new_file, new_rank) or
-                self._is_valid_file_move(new_file, new_rank) or
-                self._is_valid_diagonal_move(new_file, new_rank))
-
     def attacks(self):
         return (self._rank_squares() |
                 self._file_squares() |
                 self._diagonal_squares())
+
+    def legal_moves(self):
+        return self.attacks()
+
+    def _is_valid_move(self, new_file, new_rank):
+        return (new_file, new_rank) in self.legal_moves()
 
 
 class King(Piece):
@@ -349,30 +350,19 @@ class King(Piece):
     RANGE = 1
     OMNIDIRECTIONAL = True
 
-    def _is_square_attacked(self, file, rank):
-        opposite_color = BLACK if self.color == WHITE else WHITE
-        pieces = self.board.get_pieces_by_color(opposite_color)
+    def attacks(self):
+        return (self._rank_squares() |
+                self._file_squares() |
+                self._diagonal_squares())
 
-        squares = set()
-        for piece in pieces:
-            squares |= piece.attacks()
+    def legal_moves(self):
+        return self.attacks() - self.board.attacked_squares(self.color)
 
-        return (file, rank) in squares
+    def _is_valid_move(self, new_file, new_rank):
+        return (new_file, new_rank) in self.legal_moves()
 
     def in_check(self):
         """A king is in check if he is attacked by any of his opponents
         pieces
         """
-        return self._is_square_attacked(self.file, self.rank)
-
-    def _is_valid_move(self, new_file, new_rank):
-        if self._is_square_attacked(new_file, new_rank):
-            return False
-        return (self._is_valid_rank_move(new_file, new_rank) or
-                self._is_valid_file_move(new_file, new_rank) or
-                self._is_valid_diagonal_move(new_file, new_rank))
-
-    def attacks(self):
-        return (self._rank_squares() |
-                self._file_squares() |
-                self._diagonal_squares())
+        return (self.file, self.rank) in self.board.attacked_squares(self.color)

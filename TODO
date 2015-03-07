@@ -4,8 +4,8 @@ Rules
 - Use legal_moves() for
     - Rook [DONE]
     - Bishop [DONE]
-    - Queen
-    - King
+    - Queen [DONE]
+    - King [DONE]
     - Knight
     - Pawn
 
