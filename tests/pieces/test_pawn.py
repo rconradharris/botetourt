@@ -71,9 +71,9 @@ class PawnTests(TestCase):
 
     def test_white_cannot_capture_south(self):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
-        self.board.set_piece(Pawn, BLACK, 'a', 2)
+        self.board.set_piece(Pawn, BLACK, 'b', 1)
         with self.assertRaises(MoveNotAllowed):
-            self.board.move_piece('b', 2, 'c', 3)
+            self.board.move_piece('b', 2, 'b', 1)
 
     def test_white_cannot_capture_south_east(self):
         self.board.set_piece(Pawn, WHITE, 'b', 2)
@@ -93,5 +93,3 @@ class PawnTests(TestCase):
         self.assertPieceAttacks(pawn, 'e', 5)
         self.assertPieceDoesNotAttack(pawn, 'f', 6)
         self.assertPieceDoesNotAttack(pawn, 'e', 3)
-
-

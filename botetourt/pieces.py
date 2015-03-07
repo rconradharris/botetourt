@@ -81,27 +81,32 @@ class Piece(object):
 
         return squares
 
-    def _file_squares(self):
+    def _file_squares(self, range=None, can_capture=True):
         """Return all squares attacked along the file by a piece."""
         squares = set()
+        if range is None:
+            range = self.RANGE
 
         def _traverse_ranks(end_rank):
-            ranks = self._get_ranks_in_between_inclusive(end_rank)[1:self.RANGE+1]
+            ranks = self._get_ranks_in_between_inclusive(end_rank)[1:range+1]
             for rank in ranks:
                 piece = self.board[self.file][rank]
                 if piece and piece.color == self.color:
                     break
                 elif piece and piece.color != self.color:
-                    squares.add((self.file, rank))
+                    if can_capture:
+                        squares.add((self.file, rank))
                     break
                 else:
                     squares.add((self.file, rank))
 
         # Going north
-        _traverse_ranks(RANKS[-1])
+        if self.OMNIDIRECTIONAL or self.color == WHITE:
+            _traverse_ranks(RANKS[-1])
 
         # Going south
-        _traverse_ranks(RANKS[0])
+        if self.OMNIDIRECTIONAL or self.color == BLACK:
+            _traverse_ranks(RANKS[0])
 
         return squares
 
@@ -215,9 +220,6 @@ class Piece(object):
     def move(self, new_file, new_rank):
         piece_on_dest_square = self.board[new_file][new_rank]
 
-        #if piece_on_dest_square and piece_on_dest_square.color == self.color:
-        #    raise MoveNotAllowed
-
         if not self._is_valid_move(new_file, new_rank):
             raise MoveNotAllowed
 
@@ -237,21 +239,18 @@ class Pawn(Piece):
     RANGE = 1
     OMNIDIRECTIONAL = False
 
-    def _is_valid_move(self, new_file, new_rank):
-        piece_on_dest_square = self.board[new_file][new_rank]
-        if piece_on_dest_square:
-            return self._is_valid_diagonal_move(new_file, new_rank)
-        else:
-            # A pawn can push two squares forward on first move, otherwise it can
-            # only push one square
-            piece_range = self.RANGE if self.moved else 2
-
-            # A pawn is blocked by a piece in front of it
-            return self._is_valid_file_move(new_file, new_rank,
-                                            piece_range=piece_range)
-
     def attacks(self):
         return self._diagonal_squares()
+
+    def legal_moves(self):
+        # A pawn can push two squares forward on first move, otherwise it can
+        # only push one square
+        range = self.RANGE if self.moved else 2
+        return (self._file_squares(range=range, can_capture=False) |
+                self._diagonal_squares())
+
+    def _is_valid_move(self, new_file, new_rank):
+        return (new_file, new_rank) in self.legal_moves()
 
 
 class Knight(Piece):
