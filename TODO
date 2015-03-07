@@ -1,21 +1,25 @@
-Split up files
-==============
-
-botetourt/
-    board.py
-    exc.py
-    pieces.py
-tests/
-    test.py
-    test_board.py
-    pieces/
-        test_pawn.py
-        test_king.py
-
-
-
 Rules
 =====
+
+- Use legal_moves() for
+    - Rook [DONE]
+    - Bishop
+    - Queen
+    - King
+    - Knight
+    - Pawn
+
+- legal_moves()
+
+    attack_squares()
+    - same square
+    - occupied square
+    - attacked square (if king)
+
+- _is_valid_move(new_file, new_rank)
+    (new_file, new_rank) in legal_moves
+
+
 
 - Detect checkmate
 

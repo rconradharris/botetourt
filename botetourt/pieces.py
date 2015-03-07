@@ -57,11 +57,16 @@ class Piece(object):
         squares = set()
 
         def _traverse_files(end_file):
-            files = self._get_files_in_between_inclusive(end_file)[:self.RANGE+1]
+            files = self._get_files_in_between_inclusive(end_file)[1:self.RANGE+1]
             for file in files:
-                squares.add((file, self.rank))
-                if file != self.file and self.board[file][self.rank]:
+                piece = self.board[file][self.rank]
+                if piece and piece.color == self.color:
                     break
+                elif piece and piece.color != self.color:
+                    squares.add((file, self.rank))
+                    break
+                else:
+                    squares.add((file, self.rank))
 
         # Going east
         _traverse_files(FILES[-1])
@@ -76,11 +81,16 @@ class Piece(object):
         squares = set()
 
         def _traverse_ranks(end_rank):
-            ranks = self._get_ranks_in_between_inclusive(end_rank)[:self.RANGE+1]
+            ranks = self._get_ranks_in_between_inclusive(end_rank)[1:self.RANGE+1]
             for rank in ranks:
-                squares.add((self.file, rank))
-                if rank != self.rank and self.board[self.file][rank]:
+                piece = self.board[self.file][rank]
+                if piece and piece.color == self.color:
                     break
+                elif piece and piece.color != self.color:
+                    squares.add((self.file, rank))
+                    break
+                else:
+                    squares.add((self.file, rank))
 
         # Going north
         _traverse_ranks(RANKS[-1])
@@ -200,8 +210,8 @@ class Piece(object):
     def move(self, new_file, new_rank):
         piece_on_dest_square = self.board[new_file][new_rank]
 
-        if piece_on_dest_square and piece_on_dest_square.color == self.color:
-            raise MoveNotAllowed
+        #if piece_on_dest_square and piece_on_dest_square.color == self.color:
+        #    raise MoveNotAllowed
 
         if not self._is_valid_move(new_file, new_rank):
             raise MoveNotAllowed
@@ -299,13 +309,15 @@ class Rook(Piece):
     RANGE = INFINITY
     OMNIDIRECTIONAL = True
 
-    def _is_valid_move(self, new_file, new_rank):
-        # A rook must move along a single rank or file
-        return (self._is_valid_rank_move(new_file, new_rank) or
-                self._is_valid_file_move(new_file, new_rank))
-
     def attacks(self):
         return self._rank_squares() | self._file_squares()
+
+    def legal_moves(self):
+        return self.attacks()
+
+    def _is_valid_move(self, new_file, new_rank):
+        return (new_file, new_rank) in self.legal_moves()
+
 
 
 class Queen(Piece):

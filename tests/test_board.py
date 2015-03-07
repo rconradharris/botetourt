@@ -53,4 +53,26 @@ class BoardTests(TestCase):
         self.board.move_piece('a', 1, 'a', 7)
         self.assertEqual([black_pawn], self.board.captured_pieces[WHITE])
 
+    def test_cannot_capture_own_piece_along_file(self):
+        # White can capture black
+        self.board.set_piece(Rook, WHITE, 'a', 1)
+        self.board.set_piece(Pawn, BLACK, 'a', 3)
+        self.board.move_piece('a', 1, 'a', 3)
 
+        # But not white
+        self.board.set_piece(Rook, WHITE, 'h', 1)
+        self.board.set_piece(Pawn, WHITE, 'h', 3)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('h', 1, 'h', 3)
+
+    def test_cannot_capture_own_piece_along_rank(self):
+        # White can capture black
+        self.board.set_piece(Rook, WHITE, 'a', 1)
+        self.board.set_piece(Bishop, BLACK, 'c', 1)
+        self.board.move_piece('a', 1, 'c', 1)
+
+        # But not white
+        self.board.set_piece(Rook, WHITE, 'h', 1)
+        self.board.set_piece(Bishop, WHITE, 'f', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('h', 1, 'f', 1)

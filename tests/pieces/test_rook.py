@@ -44,7 +44,6 @@ class RookTests(TestCase):
 
     def test_attacks_unblocked(self):
         rook = self.board.set_piece(Rook, WHITE, 'd', 4)
-        self.assertPieceAttacks(rook, 'd', 4)
         self.assertPieceAttacks(rook, 'f', 4)
         self.assertPieceAttacks(rook, 'd', 6)
         self.assertPieceDoesNotAttack(rook, 'f', 5)
@@ -52,16 +51,8 @@ class RookTests(TestCase):
     def test_attacks_blocked(self):
         rook = self.board.set_piece(Rook, WHITE, 'a', 1)
         self.board.set_piece(Pawn, WHITE, 'a', 2)
-        self.assertPieceAttacks(rook, 'a', 1)
-        self.assertPieceAttacks(rook, 'a', 2)
+        self.assertPieceDoesNotAttack(rook, 'a', 2)
         self.assertPieceDoesNotAttack(rook, 'a', 3)
-
         self.assertPieceAttacks(rook, 'c', 1)
-
         self.board.set_piece(Pawn, WHITE, 'b', 1)
-
-        self.assertPieceAttacks(rook, 'b', 1)
         self.assertPieceDoesNotAttack(rook, 'c', 1)
-
-
-
