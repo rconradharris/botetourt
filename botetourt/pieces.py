@@ -297,11 +297,16 @@ class Bishop(Piece):
     RANGE = INFINITY
     OMNIDIRECTIONAL = True
 
-    def _is_valid_move(self, new_file, new_rank):
-        return self._is_valid_diagonal_move(new_file, new_rank)
-
     def attacks(self):
         return self._diagonal_squares()
+
+    def legal_moves(self):
+        return self.attacks()
+
+    def _is_valid_move(self, new_file, new_rank):
+        return (new_file, new_rank) in self.legal_moves()
+        #return self._is_valid_diagonal_move(new_file, new_rank)
+
 
 
 class Rook(Piece):
