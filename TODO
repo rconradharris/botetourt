@@ -6,7 +6,7 @@ Rules
     - Bishop [DONE]
     - Queen [DONE]
     - King [DONE]
-    - Knight
+    - Knight [DONE]
     - Pawn
 
 - Remove _is_valid_move() just use (x,y) in legal_moves()

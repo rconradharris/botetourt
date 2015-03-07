@@ -34,3 +34,14 @@ class KnightTests(TestCase):
         self.assertPieceAttacks(knight, 'b', 3)
         self.assertPieceAttacks(knight, 'b', 5)
         self.assertPieceAttacks(knight, 'c', 6)
+
+    def test_knight_can_capture_opposite_color(self):
+        knight = self.board.set_piece(Knight, WHITE, 'd', 4)
+        self.board.set_piece(Pawn, BLACK, 'f', 3)
+        self.board.move_piece('d', 4, 'f', 3)
+
+    def test_knight_cannot_capture_same_color(self):
+        knight = self.board.set_piece(Knight, WHITE, 'd', 4)
+        self.board.set_piece(Pawn, WHITE, 'f', 3)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('d', 4, 'f', 3)

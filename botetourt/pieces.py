@@ -259,15 +259,6 @@ class Knight(Piece):
     RANGE = None
     OMNIDIRECTIONAL = True
 
-    def _is_valid_move(self, new_file, new_rank):
-        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
-
-        # A knight can move 2 spaces along a rank but must move one space
-        # along file or vice versa
-        return ((abs(delta_rank) == 2 and abs(delta_file) == 1) or
-                (abs(delta_file) == 2 and abs(delta_rank) == 1))
-
-
     def attacks(self):
         squares = set()
 
@@ -283,7 +274,12 @@ class Knight(Piece):
                 new_rank = RANKS[old_rank_idx + rank_delta]
             except IndexError:
                 return
-            squares.add((new_file, new_rank))
+
+            piece = self.board[new_file][new_rank]
+            if piece and piece.color == self.color:
+                pass
+            else:
+                squares.add((new_file, new_rank))
 
         _traverse_knight(2, 1)
         _traverse_knight(1, 2)
@@ -295,6 +291,12 @@ class Knight(Piece):
         _traverse_knight(2, -1)
 
         return squares
+
+    def legal_moves(self):
+        return self.attacks()
+
+    def _is_valid_move(self, new_file, new_rank):
+        return (new_file, new_rank) in self.legal_moves()
 
 
 class Bishop(Piece):
