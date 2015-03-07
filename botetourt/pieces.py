@@ -118,9 +118,6 @@ class Piece(object):
             ranks.reverse()
             return ranks
 
-    def _get_ranks_in_between_exclusive(self, new_rank):
-        return self._get_ranks_in_between_inclusive(new_rank)[1:-1]
-
     def _get_files_in_between_inclusive(self, new_file):
         orig_idx = FILES.index(self.file)
         new_idx = FILES.index(new_file)
@@ -130,9 +127,6 @@ class Piece(object):
             files = FILES[new_idx:orig_idx+1]
             files.reverse()
             return files
-
-    def _get_files_in_between_exclusive(self, new_file):
-        return self._get_files_in_between_inclusive(new_file)[1:-1]
 
     def _capture(self, piece):
         self.board.captured_pieces[self.color].append(piece)

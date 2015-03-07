@@ -1,15 +1,10 @@
 Rules
 =====
 
-- Remove _is_valid_move() just use (x,y) in legal_moves()
-- Remove other unecessary functions now
-
 - Detect checkmate
-
 - Add castling rule check
     - King-side
     - Queen-side
-
 - Pawn promotion
 - Detect stalemate
 - En passant
