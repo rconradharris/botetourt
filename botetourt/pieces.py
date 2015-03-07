@@ -230,6 +230,9 @@ class Piece(object):
     def attacks(self):
         raise NotImplementedError
 
+    def legal_moves(self):
+        return self.attacks()
+
 
 class Pawn(Piece):
     SYMBOL = 'P'
@@ -285,9 +288,6 @@ class Knight(Piece):
 
         return squares
 
-    def legal_moves(self):
-        return self.attacks()
-
 
 class Bishop(Piece):
     SYMBOL = 'B'
@@ -297,9 +297,6 @@ class Bishop(Piece):
     def attacks(self):
         return self._diagonal_squares()
 
-    def legal_moves(self):
-        return self.attacks()
-
 
 class Rook(Piece):
     SYMBOL = 'R'
@@ -308,9 +305,6 @@ class Rook(Piece):
 
     def attacks(self):
         return self._rank_squares() | self._file_squares()
-
-    def legal_moves(self):
-        return self.attacks()
 
 
 class Queen(Piece):
@@ -322,9 +316,6 @@ class Queen(Piece):
         return (self._rank_squares() |
                 self._file_squares() |
                 self._diagonal_squares())
-
-    def legal_moves(self):
-        return self.attacks()
 
 
 class King(Piece):
