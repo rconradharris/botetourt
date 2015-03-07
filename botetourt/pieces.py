@@ -110,11 +110,6 @@ class Piece(object):
 
         return squares
 
-    def _delta_file_rank(self, new_file, new_rank):
-        delta_file = FILES.index(new_file) - FILES.index(self.file)
-        delta_rank = new_rank - self.rank
-        return delta_file, delta_rank
-
     def _get_ranks_in_between_inclusive(self, new_rank):
         if self.rank < new_rank:
             return RANKS[self.rank-1:new_rank]
@@ -125,32 +120,6 @@ class Piece(object):
 
     def _get_ranks_in_between_exclusive(self, new_rank):
         return self._get_ranks_in_between_inclusive(new_rank)[1:-1]
-
-    def _is_file_blocked(self, new_rank):
-        ranks_in_between = self._get_ranks_in_between_exclusive(new_rank)
-
-        for rank in ranks_in_between:
-            if self.board[self.file][rank]:
-                return True
-
-        return False
-
-    def _is_valid_file_move(self, new_file, new_rank, piece_range=None):
-        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
-
-        if self.OMNIDIRECTIONAL:
-            pass
-        elif self.color == WHITE and delta_rank < 0:
-            return False
-        elif self.color == BLACK and delta_rank > 0:
-            return False
-
-        if piece_range is None:
-            piece_range = self.RANGE
-
-        return (delta_file == 0 and
-                abs(delta_rank) <= piece_range and
-                not self._is_file_blocked(new_rank))
 
     def _get_files_in_between_inclusive(self, new_file):
         orig_idx = FILES.index(self.file)
@@ -165,63 +134,16 @@ class Piece(object):
     def _get_files_in_between_exclusive(self, new_file):
         return self._get_files_in_between_inclusive(new_file)[1:-1]
 
-    def _is_rank_blocked(self, new_file):
-        files_in_between = self._get_files_in_between_exclusive(new_file)
-
-        for file in files_in_between:
-            if self.board[file][self.rank]:
-                return True
-
-        return False
-
-    def _is_valid_rank_move(self, new_file, new_rank, piece_range=None):
-        if piece_range is None:
-            piece_range = self.RANGE
-
-        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
-        return (delta_rank == 0 and
-                abs(delta_file) <= piece_range and
-                not self._is_rank_blocked(new_file))
-
-    def _is_diagonal_blocked(self, new_file, new_rank):
-        ranks_in_between = self._get_ranks_in_between_exclusive(new_rank)
-        files_in_between = self._get_files_in_between_exclusive(new_file)
-
-        for file, rank in zip(files_in_between, ranks_in_between):
-            if self.board[file][rank]:
-                return True
-
-        return False
-
-    def _is_valid_diagonal_move(self, new_file, new_rank, piece_range=None):
-        delta_file, delta_rank = self._delta_file_rank(new_file, new_rank)
-
-        if self.OMNIDIRECTIONAL:
-            pass
-        elif self.color == WHITE and delta_rank < 0:
-            return False
-        elif self.color == BLACK and delta_rank > 0:
-            return False
-
-        if piece_range is None:
-            piece_range = self.RANGE
-        rank_squares = abs(delta_rank)
-        file_squares = abs(delta_file)
-        return (rank_squares == file_squares and
-                file_squares <= piece_range and
-                not self._is_diagonal_blocked(new_file, new_rank))
-
     def _capture(self, piece):
         self.board.captured_pieces[self.color].append(piece)
 
     def move(self, new_file, new_rank):
-        piece_on_dest_square = self.board[new_file][new_rank]
-
         if (new_file, new_rank) not in self.legal_moves():
             raise MoveNotAllowed
 
-        if piece_on_dest_square and piece_on_dest_square.color != self.color:
-            self._capture(piece_on_dest_square)
+        piece = self.board[new_file][new_rank]
+        if piece and piece.color != self.color:
+            self._capture(piece)
 
         self.file = new_file
         self.rank = new_rank
@@ -254,10 +176,11 @@ class Knight(Piece):
     SYMBOL = 'N'
     RANGE = None
     OMNIDIRECTIONAL = True
+    MOVE_MAP = [(2, 1), (1, 2), (-1, 2), (-2, 1),
+                (-2, -1), (-1, -2), (1, -2), (2, -1)]
 
     def attacks(self):
         squares = set()
-
         old_file_idx = FILES.index(self.file)
         old_rank_idx = RANKS.index(self.rank)
 
@@ -277,14 +200,8 @@ class Knight(Piece):
             else:
                 squares.add((new_file, new_rank))
 
-        _traverse_knight(2, 1)
-        _traverse_knight(1, 2)
-        _traverse_knight(-1, 2)
-        _traverse_knight(-2, 1)
-        _traverse_knight(-2, -1)
-        _traverse_knight(-1, -2)
-        _traverse_knight(1, -2)
-        _traverse_knight(2, -1)
+        for file_delta, rank_delta in self.MOVE_MAP:
+            _traverse_knight(file_delta, rank_delta)
 
         return squares
 
