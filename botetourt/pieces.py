@@ -211,16 +211,13 @@ class Piece(object):
                 file_squares <= piece_range and
                 not self._is_diagonal_blocked(new_file, new_rank))
 
-    def _is_valid_move(self, new_file, new_rank):
-        return False
-
     def _capture(self, piece):
         self.board.captured_pieces[self.color].append(piece)
 
     def move(self, new_file, new_rank):
         piece_on_dest_square = self.board[new_file][new_rank]
 
-        if not self._is_valid_move(new_file, new_rank):
+        if (new_file, new_rank) not in self.legal_moves():
             raise MoveNotAllowed
 
         if piece_on_dest_square and piece_on_dest_square.color != self.color:
@@ -248,9 +245,6 @@ class Pawn(Piece):
         range = self.RANGE if self.moved else 2
         return (self._file_squares(range=range, can_capture=False) |
                 self._diagonal_squares())
-
-    def _is_valid_move(self, new_file, new_rank):
-        return (new_file, new_rank) in self.legal_moves()
 
 
 class Knight(Piece):
@@ -294,9 +288,6 @@ class Knight(Piece):
     def legal_moves(self):
         return self.attacks()
 
-    def _is_valid_move(self, new_file, new_rank):
-        return (new_file, new_rank) in self.legal_moves()
-
 
 class Bishop(Piece):
     SYMBOL = 'B'
@@ -309,9 +300,6 @@ class Bishop(Piece):
     def legal_moves(self):
         return self.attacks()
 
-    def _is_valid_move(self, new_file, new_rank):
-        return (new_file, new_rank) in self.legal_moves()
-
 
 class Rook(Piece):
     SYMBOL = 'R'
@@ -323,10 +311,6 @@ class Rook(Piece):
 
     def legal_moves(self):
         return self.attacks()
-
-    def _is_valid_move(self, new_file, new_rank):
-        return (new_file, new_rank) in self.legal_moves()
-
 
 
 class Queen(Piece):
@@ -342,9 +326,6 @@ class Queen(Piece):
     def legal_moves(self):
         return self.attacks()
 
-    def _is_valid_move(self, new_file, new_rank):
-        return (new_file, new_rank) in self.legal_moves()
-
 
 class King(Piece):
     SYMBOL = 'K'
@@ -358,9 +339,6 @@ class King(Piece):
 
     def legal_moves(self):
         return self.attacks() - self.board.attacked_squares(self.color)
-
-    def _is_valid_move(self, new_file, new_rank):
-        return (new_file, new_rank) in self.legal_moves()
 
     def in_check(self):
         """A king is in check if he is attacked by any of his opponents
