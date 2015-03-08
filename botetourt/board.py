@@ -1,4 +1,4 @@
-from botetourt.exc import NotAValidSquare, MoveNotAllowed, NoPieceThere
+from botetourt.exc import MoveNotAllowed, NoPieceThere
 from botetourt.consts import WHITE, BLACK, FILES, RANKS
 from botetourt.pieces import Queen, Pawn
 
@@ -45,7 +45,7 @@ class Board(object):
 
     def set_piece(self, piece_class, color, file, rank):
         if not self.is_valid_square(file, rank):
-            raise NotAValidSquare
+            raise MoveNotAllowed
 
         piece = piece_class(self, color, file, rank)
         self[file][rank] = piece
@@ -87,7 +87,7 @@ class Board(object):
 
     def move_piece(self, file, rank, new_file, new_rank):
         if not self.is_valid_square(file, rank):
-            raise NotAValidSquare
+            raise MoveNotAllowed
 
         piece = self[file][rank]
         if not piece:

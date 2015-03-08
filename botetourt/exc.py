@@ -8,7 +8,3 @@ class NoPieceThere(ChessException):
 
 class MoveNotAllowed(ChessException):
     pass
-
-
-class NotAValidSquare(MoveNotAllowed):
-    pass

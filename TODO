@@ -32,9 +32,6 @@ Cleanup
 - Add test for set_piece if piece is already present
 - Add tests for remove_piece
 
-- Unify attacks and _is_valid_move
-    - Handle the difference between pawn attacks and pawn moves
-
 Future Work
 ===========
 

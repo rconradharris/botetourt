@@ -1,20 +1,20 @@
 from botetourt.board import Board, WHITE, BLACK
 from botetourt.pieces import Bishop, King, Knight, Pawn, Queen, Rook
-from botetourt.exc import MoveNotAllowed, NotAValidSquare
+from botetourt.exc import MoveNotAllowed
 
 from tests import TestCase
 
 
 class BoardTests(TestCase):
     def test_invalid_file(self):
-        with self.assertRaises(NotAValidSquare):
+        with self.assertRaises(MoveNotAllowed):
             self.board.set_piece(Pawn, WHITE, 'i', 2)
 
     def test_invalid_rank(self):
-        with self.assertRaises(NotAValidSquare):
+        with self.assertRaises(MoveNotAllowed):
             self.board.set_piece(Pawn, WHITE, 'h', 0)
 
-        with self.assertRaises(NotAValidSquare):
+        with self.assertRaises(MoveNotAllowed):
             self.board.set_piece(Pawn, WHITE, 'h', 9)
 
     def test_cannot_move_to_same_square(self):
