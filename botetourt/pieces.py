@@ -1,7 +1,5 @@
-from botetourt.consts import WHITE, BLACK, FILES, RANKS
+from botetourt.consts import WHITE, BLACK, FILES, RANKS, INFINITY
 from botetourt.exc import MoveNotAllowed 
-
-INFINITY = 999
 
 
 class Piece(object):

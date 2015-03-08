@@ -1,10 +1,19 @@
 Rules
 =====
 
+Piece Rules
+===========
+
 - Detect checkmate
 - Detect stalemate
 - En passant
+
+Game Rules
+==========
+
 - Add move state to determine who's move it is
+
+
 
 Input/Output
 ============
@@ -19,8 +28,6 @@ AI
 
 Cleanup
 =======
-
-- Remove INFINITY const
 
 - Add test for set_piece if piece is already present
 - Add tests for remove_piece
