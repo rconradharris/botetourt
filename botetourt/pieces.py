@@ -1,4 +1,4 @@
-from botetourt.board import WHITE, BLACK, FILES, RANKS
+from botetourt.consts import WHITE, BLACK, FILES, RANKS
 from botetourt.exc import MoveNotAllowed 
 
 INFINITY = 999
@@ -11,6 +11,16 @@ class Piece(object):
         self.file = file
         self.rank = rank
         self.moved = False
+
+    def __eq__(self, piece):
+        """This equality allows us to compare two separate piece instances and
+        determine if they are 'meaningfully' the same, e.g. same board
+        position, color and class.
+        """
+        return (self.__class__ == piece.__class__ and
+                self.color == piece.color and
+                self.file == piece.file and
+                self.rank == piece.rank)
 
     @property
     def class_name(self):
@@ -262,7 +272,7 @@ class King(Piece):
         if not piece:
             return False
 
-        if piece.class_name.lower() != 'rook':
+        if piece.__class__ != Rook:
             return False
 
         # King cannot pass through an attacked square

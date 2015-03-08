@@ -93,3 +93,13 @@ class PawnTests(TestCase):
         self.assertPieceAttacks(pawn, 'e', 5)
         self.assertPieceDoesNotAttack(pawn, 'f', 6)
         self.assertPieceDoesNotAttack(pawn, 'e', 3)
+
+    def test_white_pawn_promotion_auto_queen(self):
+        self.board.set_piece(Pawn, WHITE, 'a', 7)
+        self.board.move_piece('a', 7, 'a', 8)
+        self.assertPieceOnSquare(Queen(self.board, WHITE, 'a', 8))
+
+    def test_black_pawn_promotion_auto_queen(self):
+        self.board.set_piece(Pawn, BLACK, 'b', 2)
+        self.board.move_piece('b', 2, 'b', 1)
+        self.assertPieceOnSquare(Queen(self.board, BLACK, 'b', 1))

@@ -2,7 +2,6 @@ Rules
 =====
 
 - Detect checkmate
-- Pawn promotion
 - Detect stalemate
 - En passant
 - Add move state to determine who's move it is
@@ -21,8 +20,17 @@ AI
 Cleanup
 =======
 
+- Remove INFINITY const
+
 - Add test for set_piece if piece is already present
 - Add tests for remove_piece
 
 - Unify attacks and _is_valid_move
     - Handle the difference between pawn attacks and pawn moves
+
+Future Work
+===========
+
+- Add pawn promotion callback to allow user or AI to choose what to promote to.
+    You can only promote to a queen, knight, rook, or bishop.
+

@@ -1,9 +1,6 @@
 from botetourt.exc import NotAValidSquare, MoveNotAllowed, NoPieceThere
-
-WHITE = 'w'
-BLACK = 'b'
-FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-RANKS = [1, 2, 3, 4, 5, 6, 7, 8]
+from botetourt.consts import WHITE, BLACK, FILES, RANKS
+from botetourt.pieces import Queen, Pawn
 
 
 class Board(object):
@@ -78,6 +75,16 @@ class Board(object):
     def is_valid_square(self, file, rank):
         return file in FILES and rank in RANKS
 
+    def _promote_pawn(self, piece):
+        file = piece.file
+        rank = piece.rank
+        color = piece.color
+
+        piece.remove()
+
+        # FIXME: for now just auto-promoting to queen
+        self.set_piece(Queen, color, file, rank)
+
     def move_piece(self, file, rank, new_file, new_rank):
         if not self.is_valid_square(file, rank):
             raise NotAValidSquare
@@ -87,6 +94,12 @@ class Board(object):
             raise NoPieceThere
 
         piece.move(new_file, new_rank)
+
+        if piece.__class__ == Pawn:
+            if piece.color == WHITE and piece.rank == 8:
+                self._promote_pawn(piece)
+            elif piece.color == BLACK and piece.rank == 1:
+                self._promote_pawn(piece)
 
     def attacked_squares(self, color):
         """Return all attacked squares for a given color"""

@@ -76,13 +76,13 @@ class CastlingTests(TestCase):
 
     def test_can_castle_king_side(self):
         self.board.move_piece('e', 1, 'g', 1)
-        self.assertPieceOnSquare(self.king, 'g', 1)
-        self.assertPieceOnSquare(self.king_rook, 'f', 1)
+        self.assertPieceOnSquare(King(self.board, WHITE, 'g', 1))
+        self.assertPieceOnSquare(Rook(self.board, WHITE, 'f', 1))
 
     def test_can_castle_queen_side(self):
         self.board.move_piece('e', 1, 'c', 1)
-        self.assertPieceOnSquare(self.king, 'c', 1)
-        self.assertPieceOnSquare(self.queen_rook, 'd', 1)
+        self.assertPieceOnSquare(King(self.board, WHITE, 'c', 1))
+        self.assertPieceOnSquare(Rook(self.board, WHITE, 'd', 1))
 
     def test_cannot_castle_king_side_if_king_has_moved(self):
         self.board.move_piece('e', 1, 'd', 1)
