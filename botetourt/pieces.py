@@ -12,6 +12,10 @@ class Piece(object):
         self.rank = rank
         self.moved = False
 
+    @property
+    def class_name(self):
+        return self.__class__.__name__
+
     def __str__(self):
         sym = self.SYMBOL
         return sym.lower() if self.color == BLACK else sym.upper()
@@ -131,16 +135,29 @@ class Piece(object):
     def _capture(self, piece):
         self.board.captured_pieces[self.color].append(piece)
 
+    def _pre_move_hook(self, new_file, new_rank):
+        pass
+
+    def remove(self):
+        self.board[self.file][self.rank] = None
+        self.file = self.rank = self.board = None
+
     def move(self, new_file, new_rank):
         if (new_file, new_rank) not in self.legal_moves():
             raise MoveNotAllowed
 
-        piece = self.board[new_file][new_rank]
-        if piece and piece.color != self.color:
-            self._capture(piece)
+        other_piece = self.board[new_file][new_rank]
+        if other_piece and other_piece.color != self.color:
+            self._capture(other_piece)
 
+        self._pre_move_hook(new_file, new_rank)
+
+        self.board[self.file][self.rank] = None
+
+        self.board[new_file][new_rank] = self
         self.file = new_file
         self.rank = new_rank
+
         self.moved = True
 
     def attacks(self):
@@ -239,8 +256,45 @@ class King(Piece):
                 self._file_squares() |
                 self._diagonal_squares())
 
+    def _can_castle(self, king_target_file, rook_file, attacked_squares):
+        piece = self.board[rook_file][1]
+
+        if not piece:
+            return False
+
+        if piece.class_name.lower() != 'rook':
+            return False
+
+        # King cannot pass through an attacked square
+        king_path = {(f, 1) for f in self._get_files_in_between_inclusive(king_target_file)[1:]}
+        if king_path & attacked_squares:
+            return False
+
+        return not self.moved and not self.in_check()
+
     def legal_moves(self):
-        return self.attacks() - self.board.attacked_squares(self.color)
+        attacked_squares = self.board.attacked_squares(self.color)
+
+        squares = self.attacks() - attacked_squares
+
+        # King-side castling
+        if self._can_castle('g', 'h', attacked_squares):
+            squares.add(('g', 1))
+
+        # Queen-side castling
+        if self._can_castle('c', 'a', attacked_squares):
+            squares.add(('c', 1))
+
+        return squares
+
+    def _pre_move_hook(self, new_file, new_rank):
+        if (self.file, self.rank) == ('e', 1):
+            if (new_file, new_rank) == ('g', 1):
+                # King-side castling so move king-side rook
+                self.board['h'][1].move('f', 1)
+            elif (new_file, new_rank) == ('c', 1):
+                # Queen-side castling so move queen-side rook
+                self.board['a'][1].move('d', 1)
 
     def in_check(self):
         """A king is in check if he is attacked by any of his opponents

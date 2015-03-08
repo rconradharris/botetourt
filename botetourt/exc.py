@@ -1,6 +1,7 @@
 class ChessException(Exception):
     pass
 
+
 class NoPieceThere(ChessException):
     pass
 

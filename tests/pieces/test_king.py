@@ -67,3 +67,87 @@ class KingTests(TestCase):
             self.board.move_piece('b', 2, 'b', 3)
 
 
+class CastlingTests(TestCase):
+    def setUp(self):
+        super(CastlingTests, self).setUp()
+        self.king = self.board.set_piece(King, WHITE, 'e', 1)
+        self.king_rook = self.board.set_piece(Rook, WHITE, 'h', 1)
+        self.queen_rook = self.board.set_piece(Rook, WHITE, 'a', 1)
+
+    def test_can_castle_king_side(self):
+        self.board.move_piece('e', 1, 'g', 1)
+        self.assertPieceOnSquare(self.king, 'g', 1)
+        self.assertPieceOnSquare(self.king_rook, 'f', 1)
+
+    def test_can_castle_queen_side(self):
+        self.board.move_piece('e', 1, 'c', 1)
+        self.assertPieceOnSquare(self.king, 'c', 1)
+        self.assertPieceOnSquare(self.queen_rook, 'd', 1)
+
+    def test_cannot_castle_king_side_if_king_has_moved(self):
+        self.board.move_piece('e', 1, 'd', 1)
+        self.board.move_piece('d', 1, 'e', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'g', 1)
+
+    def test_cannot_castle_queen_side_if_king_has_moved(self):
+        self.board.move_piece('e', 1, 'd', 1)
+        self.board.move_piece('d', 1, 'e', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'c', 1)
+
+    def test_cannot_castle_king_side_if_h1_is_empty(self):
+        self.board.remove_piece('h', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'g', 1)
+
+    def test_cannot_castle_queen_side_if_a1_is_empty(self):
+        self.board.remove_piece('a', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'c', 1)
+
+    def test_cannot_castle_king_side_if_h1_is_not_a_rook(self):
+        self.board.remove_piece('h', 1)
+        self.board.set_piece(Queen, WHITE, 'h', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'g', 1)
+
+    def test_cannot_castle_queen_side_if_a1_is_not_a_rook(self):
+        self.board.remove_piece('a', 1)
+        self.board.set_piece(Queen, WHITE, 'a', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'c', 1)
+
+    def test_cannot_castle_king_side_if_in_check(self):
+        self.board.set_piece(Rook, BLACK, 'e', 8)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'g', 1)
+
+    def test_cannot_castle_queen_side_if_in_check(self):
+        self.board.set_piece(Rook, BLACK, 'e', 8)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'c', 1)
+
+    def test_cannot_castle_king_side_if_piece_in_between(self):
+        self.board.set_piece(Bishop, WHITE, 'f', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'g', 1)
+
+    def test_cannot_castle_queen_side_if_piece_in_between(self):
+        self.board.set_piece(Bishop, WHITE, 'c', 1)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'c', 1)
+
+    def test_cannot_castle_king_side_if_check_along_king_path(self):
+        self.board.set_piece(Rook, BLACK, 'f', 8)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'g', 1)
+
+    def test_cannot_castle_queen_side_if_check_along_king_path(self):
+        self.board.set_piece(Rook, BLACK, 'd', 8)
+        with self.assertRaises(MoveNotAllowed):
+            self.board.move_piece('e', 1, 'c', 1)
+
+    def test_can_castle_queen_side_if_rook_on_b8(self):
+        self.board.set_piece(Rook, BLACK, 'b', 8)
+        self.board.move_piece('e', 1, 'c', 1)

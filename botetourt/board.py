@@ -1,4 +1,4 @@
-from botetourt.exc import NotAValidSquare, MoveNotAllowed
+from botetourt.exc import NotAValidSquare, MoveNotAllowed, NoPieceThere
 
 WHITE = 'w'
 BLACK = 'b'
@@ -54,6 +54,12 @@ class Board(object):
         self[file][rank] = piece
         return piece
 
+    def remove_piece(self, file, rank):
+        piece = self[file][rank]
+        if not piece:
+            raise NoPieceThere
+        piece.remove()
+
     def setup_pieces(self):
         for rank in RANKS:
             self.set_piece(Pawn, WHITE, 'b', rank)
@@ -76,18 +82,11 @@ class Board(object):
         if not self.is_valid_square(file, rank):
             raise NotAValidSquare
 
-        # Make sure we're not moving to the same square
-        if file == new_file and rank == new_rank:
-            raise MoveNotAllowed
-
         piece = self[file][rank]
-
         if not piece:
             raise NoPieceThere
 
         piece.move(new_file, new_rank)
-        self[new_file][new_rank] = piece
-        self[file][rank] = None
 
     def attacked_squares(self, color):
         """Return all attacked squares for a given color"""
