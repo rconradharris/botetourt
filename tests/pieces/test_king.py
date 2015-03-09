@@ -151,3 +151,27 @@ class CastlingTests(TestCase):
     def test_can_castle_queen_side_if_rook_on_b8(self):
         self.board.set_piece(Rook, BLACK, 'b', 8)
         self.board.move_piece('e', 1, 'c', 1)
+
+
+class CheckmateTests(TestCase):
+    def setUp(self):
+        super(CheckmateTests, self).setUp()
+        self.king = self.board.set_piece(King, WHITE, 'a', 1)
+
+    def test_smothered_mate(self):
+        self.board.set_piece(Rook, WHITE, 'b', 1)
+        self.board.set_piece(Pawn, WHITE, 'a', 2)
+        self.board.set_piece(Pawn, WHITE, 'b', 2)
+        self.board.set_piece(Knight, BLACK, 'c', 2)
+        self.assertTrue(self.king.is_checkmated())
+
+    def test_king_can_capture_unprotected_piece(self):
+        self.board.set_piece(Rook, WHITE, 'b', 1)
+        self.board.set_piece(Rook, BLACK, 'a', 2)
+        self.assertFalse(self.king.is_checkmated())
+
+    def test_king_cannot_capture_protected_piece(self):
+        self.board.set_piece(Rook, WHITE, 'b', 1)
+        self.board.set_piece(Rook, BLACK, 'a', 3)
+        self.board.set_piece(Rook, BLACK, 'a', 2)
+        self.assertTrue(self.king.is_checkmated())

@@ -1,3 +1,24 @@
+Different kinds of maps needed:
+
+Move map - legal moves a piece can make
+
+Attack map - which squares a piece is currently attacking
+
+A player is attacking a square if he has a piece on that square, or one of his
+pieces is attacking that square.
+
+A king can capture a piece only if it is unprotected.
+
+How do we determine if it's protected?
+
+
+- determine which opposing pieces are attacking a given square?
+
+
+
+
+
+
 Rules
 =====
 
@@ -5,6 +26,14 @@ Piece Rules
 ===========
 
 - Detect checkmate
+    - in check
+    - no legal moves
+        - caputre opposing piece
+        - interpose a piece
+        - moving the king
+
+    - cannot capture all checking pieces
+
 - Detect stalemate
 - En passant
 

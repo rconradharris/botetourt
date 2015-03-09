@@ -44,7 +44,7 @@ class Board(object):
         self.captured_pieces = {WHITE: [], BLACK: []}
 
     def set_piece(self, piece_class, color, file, rank):
-        if not self.is_valid_square(file, rank):
+        if not self._is_valid_square(file, rank):
             raise MoveNotAllowed
 
         piece = piece_class(self, color, file, rank)
@@ -72,7 +72,7 @@ class Board(object):
             self.set_piece(Queen, color, file, 4)
             self.set_piece(King, color, file, 5)
 
-    def is_valid_square(self, file, rank):
+    def _is_valid_square(self, file, rank):
         return file in FILES and rank in RANKS
 
     def _promote_pawn(self, piece):
@@ -86,7 +86,7 @@ class Board(object):
         self.set_piece(Queen, color, file, rank)
 
     def move_piece(self, file, rank, new_file, new_rank):
-        if not self.is_valid_square(file, rank):
+        if not self._is_valid_square(file, rank):
             raise MoveNotAllowed
 
         piece = self[file][rank]

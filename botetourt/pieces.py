@@ -264,7 +264,10 @@ class King(Piece):
                 self._file_squares() |
                 self._diagonal_squares())
 
-    def _can_castle(self, king_target_file, rook_file, attacked_squares):
+    def _can_castle(self, king_target_file, rook_file, attacked_squares=None):
+        if attacked_squares is None:
+            attacked_squares = self.board.attacked_squares(self.color)
+
         piece = self.board[rook_file][1]
 
         if not piece:
@@ -280,17 +283,23 @@ class King(Piece):
 
         return not self.moved and not self.in_check()
 
+    def can_castle_king_side(self, attacked_squares=None):
+        return self._can_castle('g', 'h', attacked_squares=attacked_squares)
+
+    def can_castle_queen_side(self, attacked_squares=None):
+        return self._can_castle('c', 'a', attacked_squares=attacked_squares)
+
     def legal_moves(self):
         attacked_squares = self.board.attacked_squares(self.color)
 
         squares = self.attacks() - attacked_squares
 
         # King-side castling
-        if self._can_castle('g', 'h', attacked_squares):
+        if self.can_castle_king_side(attacked_squares=attacked_squares):
             squares.add(('g', 1))
 
         # Queen-side castling
-        if self._can_castle('c', 'a', attacked_squares):
+        if self.can_castle_queen_side(attacked_squares=attacked_squares):
             squares.add(('c', 1))
 
         return squares
@@ -309,3 +318,6 @@ class King(Piece):
         pieces
         """
         return (self.file, self.rank) in self.board.attacked_squares(self.color)
+
+    def is_checkmated(self):
+        return self.in_check() and not self.legal_moves()
