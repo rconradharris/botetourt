@@ -42,14 +42,9 @@ class Piece(object):
 
         def _traverse_diag(file_dir, rank_dir):
             for file, rank in zip(file_dir, rank_dir)[1:self.RANGE+1]:
-                piece = self.board[file][rank]
-                if piece and piece.color == self.color:
+                squares.add((file, rank))
+                if self.board[file][rank]:
                     break
-                elif piece and piece.color != self.color:
-                    squares.add((file, rank))
-                    break
-                else:
-                    squares.add((file, rank))
 
         # Pawns are not omnidirection and therefore must atack north if white,
         # or south if black
@@ -76,14 +71,9 @@ class Piece(object):
         def _traverse_files(end_file):
             files = self._get_files_in_between_inclusive(end_file)[1:self.RANGE+1]
             for file in files:
-                piece = self.board[file][self.rank]
-                if piece and piece.color == self.color:
+                squares.add((file, self.rank))
+                if self.board[file][self.rank]:
                     break
-                elif piece and piece.color != self.color:
-                    squares.add((file, self.rank))
-                    break
-                else:
-                    squares.add((file, self.rank))
 
         # Going east
         _traverse_files(FILES[-1])
@@ -103,14 +93,14 @@ class Piece(object):
             ranks = self._get_ranks_in_between_inclusive(end_rank)[1:range+1]
             for rank in ranks:
                 piece = self.board[self.file][rank]
-                if piece and piece.color == self.color:
-                    break
-                elif piece and piece.color != self.color:
-                    if can_capture:
-                        squares.add((self.file, rank))
-                    break
-                else:
+
+                # If piece is opposite color and we can't capture it, don't
+                # add the square
+                if not (piece and piece.color != self.color and not can_capture):
                     squares.add((self.file, rank))
+
+                if piece:
+                    break
 
         # Going north
         if self.OMNIDIRECTIONAL or self.color == WHITE:
@@ -172,7 +162,7 @@ class Piece(object):
         raise NotImplementedError
 
     def legal_moves(self):
-        return self.attacks()
+        return self.attacks() - self.board.occupied_squares(self.color)
 
 
 class Pawn(Piece):
@@ -187,8 +177,8 @@ class Pawn(Piece):
         # A pawn can push two squares forward on first move, otherwise it can
         # only push one square
         range = self.RANGE if self.moved else 2
-        return (self._file_squares(range=range, can_capture=False) |
-                self._diagonal_squares())
+        return (super(Pawn, self).legal_moves() |
+                self._file_squares(range=range, can_capture=False))
 
 
 class Knight(Piece):
@@ -291,18 +281,17 @@ class King(Piece):
 
     def legal_moves(self):
         attacked_squares = self.board.attacked_squares(self.color)
-
-        squares = self.attacks() - attacked_squares
+        castle_squares = set()
 
         # King-side castling
-        if self.can_castle_king_side(attacked_squares=attacked_squares):
-            squares.add(('g', 1))
+        if self.can_castle_king_side():
+            castle_squares.add(('g', 1))
 
         # Queen-side castling
-        if self.can_castle_queen_side(attacked_squares=attacked_squares):
-            squares.add(('c', 1))
+        if self.can_castle_queen_side():
+            castle_squares.add(('c', 1))
 
-        return squares
+        return super(King, self).legal_moves() - attacked_squares | castle_squares
 
     def _pre_move_hook(self, new_file, new_rank):
         if (self.file, self.rank) == ('e', 1):
