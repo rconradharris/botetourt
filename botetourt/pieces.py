@@ -31,86 +31,70 @@ class Piece(object):
     def __repr__(self):
         return str(self)
 
-    def _diagonal_squares(self):
-        """Return all squares attacked along the diagonals by a piece."""
-        squares = set()
+    def _attack_vector(self, files, ranks, range=None, can_capture=True):
+        """A vector pointing away from a piece in all of the direction which
+        it attacks.
 
-        easterly = self._get_files_in_between_inclusive(FILES[-1])
-        westerly = self._get_files_in_between_inclusive(FILES[0])
-        northerly = self._get_ranks_in_between_inclusive(RANKS[-1])
-        southerly = self._get_ranks_in_between_inclusive(RANKS[0])
+        The vectors length is given by the pieces `RANGE`, and the direction
+        is given by the piece's class.
 
-        def _traverse_diag(file_dir, rank_dir):
-            for file, rank in zip(file_dir, rank_dir)[1:self.RANGE+1]:
-                squares.add((file, rank))
-                if self.board[file][rank]:
-                    break
-
-        # Pawns are not omnidirection and therefore must atack north if white,
-        # or south if black
-        if self.OMNIDIRECTIONAL or self.color == WHITE:
-            # Going north east
-            _traverse_diag(easterly, northerly)
-
-            # Going north west
-            _traverse_diag(westerly, northerly)
-
-        if self.OMNIDIRECTIONAL or self.color == BLACK:
-            # Going south east
-            _traverse_diag(easterly, southerly)
-
-            # Going south west
-            _traverse_diag(westerly, southerly)
-
-        return squares
-
-    def _rank_squares(self):
-        """Return all squares attacked along the rank by a piece."""
-        squares = set()
-
-        def _traverse_files(end_file):
-            files = self._get_files_in_between_inclusive(end_file)[1:self.RANGE+1]
-            for file in files:
-                squares.add((file, self.rank))
-                if self.board[file][self.rank]:
-                    break
-
-        # Going east
-        _traverse_files(FILES[-1])
-
-        # Going west
-        _traverse_files(FILES[0])
-
-        return squares
-
-    def _file_squares(self, range=None, can_capture=True):
-        """Return all squares attacked along the file by a piece."""
-        squares = set()
+        A bishop will have four attack vectors in the middle of the board: NE,
+        SE, SW, and NW.
+        """
         if range is None:
             range = self.RANGE
 
-        def _traverse_ranks(end_rank):
-            ranks = self._get_ranks_in_between_inclusive(end_rank)[1:range+1]
-            for rank in ranks:
-                piece = self.board[self.file][rank]
+        vector = []
+        for file, rank in zip(files, ranks)[1:range+1]:
+            piece = self.board[file][rank]
 
-                # If piece is opposite color and we can't capture it, don't
-                # add the square
-                if not (piece and piece.color != self.color and not can_capture):
-                    squares.add((self.file, rank))
+            # If piece is opposite color and we can't capture it, don't
+            # add the square
+            if not (piece and piece.color != self.color and not can_capture):
+                vector.append((file, rank))
 
-                if piece:
-                    break
+            if piece:
+                break
 
-        # Going north
-        if self.OMNIDIRECTIONAL or self.color == WHITE:
-            _traverse_ranks(RANKS[-1])
+        return vector
 
-        # Going south
-        if self.OMNIDIRECTIONAL or self.color == BLACK:
-            _traverse_ranks(RANKS[0])
+    def _attack_vectors(self, directions, range=None, can_capture=True):
+        """Return the attack vectors given a set of directions.
 
-        return squares
+        `directions` is a set of compass directions (e.g. N, NE, E, etc.) that
+        describe along which rank, files, and diagonals a piece attacks.
+        """
+        vectors = []
+
+        def add_vector(file, rank):
+            vectors.append(self._attack_vector(file, rank, range=range,
+                                               can_capture=can_capture))
+
+        east = self._get_files_in_between_inclusive(FILES[-1])
+        west = self._get_files_in_between_inclusive(FILES[0])
+        north = self._get_ranks_in_between_inclusive(RANKS[-1])
+        south = self._get_ranks_in_between_inclusive(RANKS[0])
+        const_ranks = [self.rank] * len(RANKS)
+        const_files = [self.file] * len(RANKS)
+
+        if 'E' in directions:
+           add_vector(east, const_ranks)
+        if 'W' in directions:
+           add_vector(west, const_ranks)
+        if 'NE' in directions:
+           add_vector(east, north)
+        if 'NW' in directions:
+           add_vector(west, north)
+        if 'SE' in directions:
+           add_vector(east, south)
+        if 'SW' in directions:
+           add_vector(west, south)
+        if 'N' in directions:
+           add_vector(const_files, north)
+        if 'S' in directions:
+           add_vector(const_files, south)
+
+        return vectors
 
     def _get_ranks_in_between_inclusive(self, new_rank):
         if self.rank < new_rank:
@@ -141,7 +125,7 @@ class Piece(object):
         self.file = self.rank = self.board = None
 
     def move(self, new_file, new_rank):
-        if (new_file, new_rank) not in self.legal_moves():
+        if (new_file, new_rank) not in self.get_legal_moves():
             raise MoveNotAllowed
 
         other_piece = self.board[new_file][new_rank]
@@ -158,38 +142,56 @@ class Piece(object):
 
         self.moved = True
 
-    def attacks(self):
+    def get_attack_vector_directions(self):
         raise NotImplementedError
 
-    def legal_moves(self):
-        return self.attacks() - self.board.occupied_squares(self.color)
+    def get_attack_vectors(self):
+        """Return all attack vectors for this piece."""
+        directions = self.get_attack_vector_directions()
+        return self._attack_vectors(directions)
+
+    def get_squares_this_piece_attacks(self):
+        """Return all squares attacked by this piece as a set."""
+        vectors = self.get_attack_vectors()
+        return {sq for v in vectors for sq in v}
+
+    def get_legal_moves(self):
+        attacks = self.get_squares_this_piece_attacks()
+        occupied = self.board.occupied_squares(self.color)
+        return attacks - occupied
 
 
 class Pawn(Piece):
     SYMBOL = 'P'
     RANGE = 1
-    OMNIDIRECTIONAL = False
 
-    def attacks(self):
-        return self._diagonal_squares()
+    def get_attack_vector_directions(self):
+        return ['NE', 'NW'] if self.color == WHITE else ['SE', 'SW']
 
-    def legal_moves(self):
+    def get_legal_moves(self):
         # A pawn can push two squares forward on first move, otherwise it can
         # only push one square
         range = self.RANGE if self.moved else 2
-        return (super(Pawn, self).legal_moves() |
-                self._file_squares(range=range, can_capture=False))
+
+        if self.color == WHITE:
+            file_vector = self._attack_vectors(
+                    ['N'], range=range, can_capture=False)[0]
+        else:
+            file_vector = self._attack_vectors(
+                    ['S'], range=range, can_capture=False)[0]
+
+        file_squares = {sq for sq in file_vector}
+        return super(Pawn, self).get_legal_moves() | file_squares
 
 
 class Knight(Piece):
     SYMBOL = 'N'
     RANGE = None
-    OMNIDIRECTIONAL = True
     MOVE_MAP = [(2, 1), (1, 2), (-1, 2), (-2, 1),
                 (-2, -1), (-1, -2), (1, -2), (2, -1)]
 
-    def attacks(self):
-        squares = set()
+    def get_attack_vectors(self):
+        vectors = []
         old_file_idx = FILES.index(self.file)
         old_rank_idx = RANKS.index(self.rank)
 
@@ -207,52 +209,45 @@ class Knight(Piece):
             if piece and piece.color == self.color:
                 pass
             else:
-                squares.add((new_file, new_rank))
+                vector = [(new_file, new_rank)]
+                vectors.append(vector)
 
         for file_delta, rank_delta in self.MOVE_MAP:
             _traverse_knight(file_delta, rank_delta)
 
-        return squares
+        return vectors
 
 
 class Bishop(Piece):
     SYMBOL = 'B'
     RANGE = INFINITY
-    OMNIDIRECTIONAL = True
 
-    def attacks(self):
-        return self._diagonal_squares()
+    def get_attack_vector_directions(self):
+        return ['NE', 'SE', 'SW', 'NW']
 
 
 class Rook(Piece):
     SYMBOL = 'R'
     RANGE = INFINITY
-    OMNIDIRECTIONAL = True
 
-    def attacks(self):
-        return self._rank_squares() | self._file_squares()
+    def get_attack_vector_directions(self):
+        return ['N', 'E', 'S', 'W']
 
 
 class Queen(Piece):
     SYMBOL = 'Q'
     RANGE = INFINITY
-    OMNIDIRECTIONAL = True
 
-    def attacks(self):
-        return (self._rank_squares() |
-                self._file_squares() |
-                self._diagonal_squares())
+    def get_attack_vector_directions(self):
+        return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
 
 class King(Piece):
     SYMBOL = 'K'
     RANGE = 1
-    OMNIDIRECTIONAL = True
 
-    def attacks(self):
-        return (self._rank_squares() |
-                self._file_squares() |
-                self._diagonal_squares())
+    def get_attack_vector_directions(self):
+        return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
     def _can_castle(self, king_target_file, rook_file, attacked_squares=None):
         if attacked_squares is None:
@@ -279,7 +274,7 @@ class King(Piece):
     def can_castle_queen_side(self, attacked_squares=None):
         return self._can_castle('c', 'a', attacked_squares=attacked_squares)
 
-    def legal_moves(self):
+    def get_legal_moves(self):
         attacked_squares = self.board.attacked_squares(self.color)
         castle_squares = set()
 
@@ -291,7 +286,7 @@ class King(Piece):
         if self.can_castle_queen_side():
             castle_squares.add(('c', 1))
 
-        return super(King, self).legal_moves() - attacked_squares | castle_squares
+        return super(King, self).get_legal_moves() - attacked_squares | castle_squares
 
     def _pre_move_hook(self, new_file, new_rank):
         if (self.file, self.rank) == ('e', 1):
@@ -309,4 +304,4 @@ class King(Piece):
         return (self.file, self.rank) in self.board.attacked_squares(self.color)
 
     def is_checkmated(self):
-        return self.in_check() and not self.legal_moves()
+        return self.in_check() and not self.get_legal_moves()

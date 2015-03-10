@@ -15,7 +15,9 @@ class TestCase(unittest.TestCase):
         self.assertEqual(piece, other_piece)
 
     def assertPieceAttacks(self, piece, file, rank):
-        self.assertIn((file, rank), piece.attacks())
+        squares = piece.get_squares_this_piece_attacks()
+        self.assertIn((file, rank), squares)
 
     def assertPieceDoesNotAttack(self, piece, file, rank):
-        self.assertNotIn((file, rank), piece.attacks())
+        squares = piece.get_squares_this_piece_attacks()
+        self.assertNotIn((file, rank), squares)

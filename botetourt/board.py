@@ -119,6 +119,6 @@ class Board(object):
 
         opposite_color = BLACK if color == WHITE else WHITE
         for piece in self._get_pieces_by_color(opposite_color):
-            squares |= piece.attacks()
+            squares |= piece.get_squares_this_piece_attacks()
 
         return squares
