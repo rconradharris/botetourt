@@ -176,14 +176,14 @@ class CheckmateTests(TestCase):
         self.board.set_piece(Rook, BLACK, 'a', 2)
         self.assertTrue(self.king.is_checkmated())
 
-    ##def test_piece_can_interpose(self):
-    ##    self.board.set_piece(Rook, WHITE, 'h', 2)
-    ##    self.board.set_piece(Rook, BLACK, 'a', 8)
-    ##    self.board.set_piece(Rook, BLACK, 'b', 8)
-    ##    self.assertFalse(self.king.is_checkmated())
+    def test_piece_can_interpose(self):
+        self.board.set_piece(Rook, WHITE, 'h', 2)
+        self.board.set_piece(Rook, BLACK, 'a', 8)
+        self.board.set_piece(Rook, BLACK, 'b', 8)
+        self.assertFalse(self.king.is_checkmated())
 
-    ##def test_piece_cannot_interpose(self):
-    ##    self.board.set_piece(Rook, WHITE, 'h', 8)
-    ##    self.board.set_piece(Rook, BLACK, 'a', 8)
-    ##    self.board.set_piece(Rook, BLACK, 'b', 8)
-    ##    self.assertTrue(self.king.is_checkmated())
+    def test_piece_cannot_interpose(self):
+        self.board.set_piece(Rook, WHITE, 'h', 8)
+        self.board.set_piece(Rook, BLACK, 'a', 8)
+        self.board.set_piece(Rook, BLACK, 'b', 8)
+        self.assertTrue(self.king.is_checkmated())

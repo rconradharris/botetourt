@@ -1,33 +1,10 @@
 Rules
 =====
 
-- Need a test for double check
-
-
-How to determine if a piece can interpose between king and attacking piece?
-    - NOTE: Only rook, bishop and queen can be interposed upon
-
-    - Determine the pieces attacking the king
-    - Determine the squares in between attacking pieces and king
-        - Could have a concept of attack_vectors
-            get_attack_vectors() returns a set of all attack vectors for a piece
-
-    - Determine if any of our pieces have a legal move that occupies one of
-      those in-between squares
-
-
-
-
 Piece Rules
 ===========
 
-- Detect checkmate
-    - in check
-    - no legal moves
-        - caputre opposing piece [DONE]
-        - moving the king [DONE]
-        - interpose a piece
-
+- Need a test for double check
 - Detect stalemate
 - En passant
 

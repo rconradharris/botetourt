@@ -160,6 +160,31 @@ class Piece(object):
         occupied = self.board.occupied_squares(self.color)
         return attacks - occupied
 
+    def _get_vectors_attacking_this_piece(self, exclude_knights=False):
+        vectors = []
+        for piece in self.board.get_pieces_by_opposite_color(self.color):
+            if piece.__class__ == Knight and exclude_knights:
+                continue
+            vectors = piece.get_attack_vectors()
+            for vector in vectors:
+                if (self.file, self.rank) in vector:
+                    yield vector
+
+    def _can_interpose_upon_attack(self):
+        """Determine whether there is a piece of our color that can interpose
+        upon an attack on us.
+        """
+        legal_moves = set()
+        for piece in self.board.get_pieces_by_color(self.color):
+            legal_moves |= piece.get_legal_moves()
+
+        # Can't interpose between a knight and another piece (it jumps...)
+        for vector in self._get_vectors_attacking_this_piece(exclude_knights=True):
+            if set(vector) & legal_moves:
+                return True
+
+        return False
+
 
 class Pawn(Piece):
     SYMBOL = 'P'
@@ -249,9 +274,8 @@ class King(Piece):
     def get_attack_vector_directions(self):
         return ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
 
-    def _can_castle(self, king_target_file, rook_file, attacked_squares=None):
-        if attacked_squares is None:
-            attacked_squares = self.board.attacked_squares(self.color)
+    def _can_castle(self, king_target_file, rook_file):
+        attacked_squares = self.board.attacked_squares(self.color)
 
         piece = self.board[rook_file][1]
 
@@ -268,11 +292,11 @@ class King(Piece):
 
         return not self.moved and not self.in_check()
 
-    def can_castle_king_side(self, attacked_squares=None):
-        return self._can_castle('g', 'h', attacked_squares=attacked_squares)
+    def can_castle_king_side(self):
+        return self._can_castle('g', 'h')
 
-    def can_castle_queen_side(self, attacked_squares=None):
-        return self._can_castle('c', 'a', attacked_squares=attacked_squares)
+    def can_castle_queen_side(self):
+        return self._can_castle('c', 'a')
 
     def get_legal_moves(self):
         attacked_squares = self.board.attacked_squares(self.color)
@@ -304,4 +328,6 @@ class King(Piece):
         return (self.file, self.rank) in self.board.attacked_squares(self.color)
 
     def is_checkmated(self):
-        return self.in_check() and not self.get_legal_moves()
+        return (self.in_check() and not
+                self.get_legal_moves() and not
+                self._can_interpose_upon_attack())

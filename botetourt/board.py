@@ -34,10 +34,15 @@ class Board(object):
                 if piece:
                     yield piece
 
-    def _get_pieces_by_color(self, color):
+    def get_pieces_by_color(self, color):
         for piece in self._get_pieces():
             if piece.color == color:
                 yield piece
+
+    def get_pieces_by_opposite_color(self, color):
+        opposite_color = BLACK if color == WHITE else WHITE
+        for piece in self.get_pieces_by_color(opposite_color):
+            yield piece
 
     def clear(self):
         self.state = {}
@@ -109,16 +114,14 @@ class Board(object):
     def occupied_squares(self, color):
         """Return all squares occupied by a given color"""
         squares = set()
-        for piece in self._get_pieces_by_color(color):
+        for piece in self.get_pieces_by_color(color):
             squares.add((piece.file, piece.rank))
         return squares
 
     def attacked_squares(self, color):
         """Return all attacked squares for a given color"""
         squares = set()
-
-        opposite_color = BLACK if color == WHITE else WHITE
-        for piece in self._get_pieces_by_color(opposite_color):
+        for piece in self.get_pieces_by_opposite_color(color):
             squares |= piece.get_squares_this_piece_attacks()
 
         return squares
